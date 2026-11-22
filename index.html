@@ -51,6 +51,13 @@ td.w{color:var(--muted);font-size:13px}
 td.who{font-weight:800}
 .empty{color:var(--muted);margin:4px 0}
 .more{font:inherit;border:0;cursor:pointer;margin-top:12px;padding:10px 16px;border-radius:12px;background:#ece8fb;font-weight:800;color:var(--accent)}
+.reset{margin-top:22px;display:flex;align-items:center;gap:14px;background:#fff;border-radius:24px;padding:16px 20px;
+  box-shadow:0 2px 0 var(--line),0 10px 30px rgba(35,38,74,.06)}
+.reset .t{flex:1}
+.reset b{display:block;font-size:19px}
+.reset small{color:var(--muted);font-size:15px}
+.reset button{font:inherit;border:0;cursor:pointer;padding:12px 18px;border-radius:14px;background:#ffeceb;color:#c92a2a;font-weight:800;white-space:nowrap}
+.reset button.arm{background:#ff5a5f;color:#fff}
 .sub{font-size:21px;color:var(--muted);margin:0 0 26px}
 .level{font-size:20px;margin:30px 0 14px;display:flex;align-items:baseline;gap:10px}
 .level small{font-size:15px;color:var(--muted);font-weight:600}
@@ -112,6 +119,11 @@ td.who{font-weight:800}
     <div class="tw" id="hist"></div>
     <button class="more" id="more" hidden>Toon meer</button>
   </section>
+  <section class="reset">
+    <span style="font-size:34px">🧹</span>
+    <span class="t"><b>Alles wissen op dit toestel</b><small>Naam, instellingen, memes en historiek van alle spelletjes. Video's die je zelf toevoegde, blijven staan.</small></span>
+    <button id="reset">Wissen</button>
+  </section>
 </div>
 <script>
 (() => {
@@ -142,7 +154,7 @@ td.who{font-weight:800}
   // Irritante memes: één schakelaar voor beide spelletjes (standaard aan)
   const memes = document.getElementById('memes');
   const cur = get('sp.settings', {}).memes ?? get('tp.settings', {}).memes ?? get('np.settings', {}).memes;
-  memes.checked = cur !== false;
+  memes.checked = cur === true;               // standaard uit
   // Begroeting: met memes aan willekeurig Ewa drerrie / Yo bro / Hey gast (één keer per bezoek gekozen)
   const GREET = ['Ewa drerrie', 'Yo bro', 'Hey gast'][Math.floor(Math.random() * 3)];
   const greet = () => { document.getElementById('greet').textContent = memes.checked ? GREET : 'Hoi'; };
@@ -219,6 +231,23 @@ td.who{font-weight:800}
   });
   document.getElementById('more').addEventListener('click', () => { shown += 15; renderHist(); });
   renderHist();
+
+  // ---- Alles wissen: enkel wat deze spelletjes bewaren (sp. = sommen, tp. = tafels, np. = rekenpuzzels) ----
+  // Niet localStorage.clear(): andere sites op hetzelfde adres (oemebamo.github.io) bewaren daar ook dingen.
+  const resetBtn = document.getElementById('reset');
+  let armT = 0;
+  resetBtn.addEventListener('click', () => {
+    if (!resetBtn.classList.contains('arm')) {
+      resetBtn.classList.add('arm'); resetBtn.textContent = 'Zeker? Tik nog eens';
+      armT = setTimeout(() => { resetBtn.classList.remove('arm'); resetBtn.textContent = 'Wissen'; }, 4000);
+      return;
+    }
+    clearTimeout(armT);
+    try {
+      Object.keys(localStorage).filter(k => /^(sp|tp|np)\./.test(k)).forEach(k => localStorage.removeItem(k));
+    } catch (e) {}
+    location.reload();
+  });
   window.addEventListener('pageshow', () => { renderHist(); last('sp.history', 'lastSums'); last('tp.history', 'lastTables'); });
 })();
 </script>

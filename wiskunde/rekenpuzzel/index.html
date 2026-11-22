@@ -287,7 +287,7 @@ const TYPES = {
                levels: ['deeltafels', 'staartdeling', 'met komma'], steps: 'Tussenstappen (hoe vaak past … in …?)' }
 };
 const DEFAULTS = { name: '', type: 'brug', level: {}, stepsBy: { maal: true, kommamaal: true, delen: true, brug: false },
-                   brugMix: true, pieces: 9, sfx: true, videoSound: false, memes: true };
+                   brugMix: true, pieces: 9, sfx: true, videoSound: false, memes: false };
 const S = Object.assign({}, DEFAULTS, store.get('np.settings', {}));
 S.level = Object.assign({}, S.level); S.stepsBy = Object.assign({}, DEFAULTS.stepsBy, S.stepsBy);
 const fromHash = location.hash.replace('#', '');

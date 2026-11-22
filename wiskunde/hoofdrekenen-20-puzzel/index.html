@@ -238,7 +238,7 @@ const store = {
 };
 
 /* ---------------- Settings ---------------- */
-const DEFAULTS = { name: '', ops: 'beide', level: 'alles', pieces: 9, missing: false, sfx: true, videoSound: false, memes: true };
+const DEFAULTS = { name: '', ops: 'beide', level: 'alles', pieces: 9, missing: false, sfx: true, videoSound: false, memes: false };
 const S = Object.assign({}, DEFAULTS, store.get('sp.settings', {}));
 // De naam stel je in op de homepage
 const GREET = pick(['Ewa drerrie', 'Yo bro', 'Hey gast']); // begroeting bij memes, één keer per bezoek gekozen
