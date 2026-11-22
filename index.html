@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Oefenen">
+<meta name="theme-color" content="#f3f1ff">
+<title>Oefenen</title>
+<style>
+:root{
+  --bg:#f3f1ff; --ink:#23264a; --muted:#6b6f8f; --line:#e2dcf7; --accent:#6a4cff;
+  font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Varela Round", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink)}
+body{-webkit-user-select:none;user-select:none;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.wrap{max-width:900px;margin:0 auto;padding:40px 22px 60px}
+h1{font-size:clamp(36px,7vw,60px);margin:0 0 6px;letter-spacing:-.5px}
+.name{border-radius:14px;padding:0 6px;margin:0 -6px;outline:none;cursor:text;-webkit-user-select:text;user-select:text;
+  transition:background .15s,box-shadow .15s}
+.name:hover{background:#e6e0ff}
+.name:focus{background:#fff;box-shadow:0 0 0 3px var(--accent)}
+.name:empty::before{content:'pimpelmees';color:#b9b3d6}
+.pen{font-size:.45em;vertical-align:middle;opacity:.45;cursor:pointer;margin-left:4px}
+.name:focus + .pen{display:none}
+.opts{margin-top:26px;background:#fff;border-radius:24px;padding:16px 20px;display:flex;align-items:center;gap:14px;
+  box-shadow:0 2px 0 var(--line),0 10px 30px rgba(35,38,74,.06);cursor:pointer}
+.opts .t{flex:1}
+.opts b{display:block;font-size:19px}
+.opts small{color:var(--muted);font-size:15px}
+.switch{position:relative;width:62px;height:36px;flex:none}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.switch span{position:absolute;inset:0;border-radius:99px;background:#d9d3f0;transition:background .2s;pointer-events:none}
+.switch span::after{content:'';position:absolute;top:4px;left:4px;width:28px;height:28px;border-radius:50%;background:#fff;
+  box-shadow:0 2px 4px rgba(0,0,0,.2);transition:transform .2s}
+.switch input:checked + span{background:var(--accent)}
+.switch input:checked + span::after{transform:translateX(26px)}
+.hist{margin-top:22px;background:#fff;border-radius:24px;padding:18px 20px;box-shadow:0 2px 0 var(--line),0 10px 30px rgba(35,38,74,.06)}
+.hist h2{margin:0 0 12px;font-size:22px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.chips button{font:inherit;border:0;cursor:pointer;padding:8px 14px;border-radius:12px;background:#ece8fb;font-weight:800;color:var(--ink)}
+.chips button.on{background:var(--accent);color:#fff}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{text-align:left;color:var(--muted);font-weight:700;padding:6px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.w{color:var(--muted);font-size:13px}
+td.who{font-weight:800}
+.empty{color:var(--muted);margin:4px 0}
+.more{font:inherit;border:0;cursor:pointer;margin-top:12px;padding:10px 16px;border-radius:12px;background:#ece8fb;font-weight:800;color:var(--accent)}
+.sub{font-size:21px;color:var(--muted);margin:0 0 26px}
+.level{font-size:20px;margin:30px 0 14px;display:flex;align-items:baseline;gap:10px}
+.level small{font-size:15px;color:var(--muted);font-weight:600}
+.minis{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.mini{display:flex;flex-direction:column;gap:4px;padding:16px 18px;border-radius:22px;color:#fff;text-decoration:none;
+  background:linear-gradient(135deg,#2563eb,#38bdf8);box-shadow:0 6px 0 rgba(0,0,0,.16);transition:transform .1s;min-height:120px}
+.mini:nth-child(even){background:linear-gradient(135deg,#1d4ed8,#3b82f6)}
+.mini:active{transform:translateY(5px);box-shadow:0 1px 0 rgba(0,0,0,.16)}
+.mini .ico{font-size:34px;line-height:1}
+.mini b{font-size:19px;line-height:1.2}
+.mini span.s{font-size:14px;opacity:.9}
+.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px}
+.game{display:flex;flex-direction:column;gap:10px;padding:28px 26px;border-radius:30px;color:#fff;text-decoration:none;
+  min-height:250px;position:relative;overflow:hidden;transition:transform .1s;box-shadow:0 8px 0 rgba(0,0,0,.18)}
+.game:active{transform:translateY(6px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.game.sums{background:linear-gradient(135deg,#4d7cff,#2f9bff)}
+.game.tables{background:linear-gradient(135deg,#7c4dff,#b07cff)}
+.game .ico{font-size:72px;line-height:1;animation:bob 3s ease-in-out infinite}
+.game.tables .ico{animation-delay:-1.5s}
+@keyframes bob{50%{transform:translateY(-6px) rotate(-6deg)}}
+.game h2{margin:6px 0 0;font-size:34px}
+.game p{margin:0;font-size:19px;opacity:.92}
+.game .last{margin-top:auto;font-size:15px;font-weight:700;background:rgba(255,255,255,.2);border-radius:12px;padding:8px 12px;align-self:flex-start}
+.game .go{position:absolute;right:24px;top:24px;font-size:28px;font-weight:900;background:rgba(255,255,255,.25);
+  width:54px;height:54px;border-radius:50%;display:grid;place-items:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1><span id="greet">Hoi</span> <span class="name" id="name" contenteditable="true" spellcheck="false" autocapitalize="words" enterkeyhint="done" aria-label="Naam aanpassen"></span><span class="pen" id="pen" aria-hidden="true">✏️</span>! 👋</h1>
+  <p class="sub">Wat gaan we vandaag oefenen?</p>
+  <h2 class="level">Sommen tot 20 en tafels <small>2e en 3e leerjaar</small></h2>
+  <div class="games">
+    <a class="game sums" href="wiskunde/hoofdrekenen-20-puzzel/index.html">
+      <span class="go">▶</span>
+      <span class="ico">🧩</span>
+      <h2>Sommenpuzzel</h2>
+      <p>Plus en min tot 20</p>
+      <span class="last" id="lastSums" hidden></span>
+    </a>
+    <a class="game tables" href="wiskunde/tafels-puzzel/index.html">
+      <span class="go">▶</span>
+      <span class="ico">🔢</span>
+      <h2>Tafelpuzzel</h2>
+      <p>De tafels van 1 tot 10</p>
+      <span class="last" id="lastTables" hidden></span>
+    </a>
+  </div>
+  <h2 class="level">Rekenpuzzels <small>4e en 5e leerjaar</small></h2>
+  <div class="minis" id="minis"></div>
+  <label class="opts">
+    <span style="font-size:34px">😜</span>
+    <span class="t"><b>Irritante memes</b><small>6-7, slay girl, ma stobbe, cooked… in alle spelletjes</small></span>
+    <span class="switch"><input type="checkbox" id="memes"><span></span></span>
+  </label>
+  <section class="hist">
+    <h2>Historiek</h2>
+    <div class="chips" id="chips"></div>
+    <div class="tw" id="hist"></div>
+    <button class="more" id="more" hidden>Toon meer</button>
+  </section>
+</div>
+<script>
+(() => {
+  const get = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+  const set = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  const el = document.getElementById('name');
+  const DEFAULT = 'pimpelmees'; // als er nog geen naam is ingevuld
+  const KEYS = ['sp.settings', 'tp.settings', 'np.settings']; // sommen, tafels, rekenpuzzels
+  let name = (get('sp.settings', {}).name || get('tp.settings', {}).name || get('np.settings', {}).name || '');
+  el.textContent = name || DEFAULT;
+  // Naam aanpassen: tik erop, typ, Enter of ergens anders tikken bewaart (voor beide spelletjes)
+  const save = () => {
+    let v = el.textContent.replace(/\s+/g, ' ').trim().slice(0, 16);
+    if (v.toLowerCase() === DEFAULT) v = '';           // pimpelmees laten staan = geen naam
+    name = v; el.textContent = v || DEFAULT;
+    KEYS.forEach(k => set(k, Object.assign(get(k, {}), { name: v })));
+  };
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+    if (e.key === 'Escape') { el.textContent = name || DEFAULT; el.blur(); }
+  });
+  el.addEventListener('blur', save);
+  el.addEventListener('paste', e => { e.preventDefault(); document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text')); });
+  document.getElementById('pen').addEventListener('click', () => {
+    el.focus(); const r = document.createRange(); r.selectNodeContents(el);
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  });
+  // Irritante memes: één schakelaar voor beide spelletjes (standaard aan)
+  const memes = document.getElementById('memes');
+  const cur = get('sp.settings', {}).memes ?? get('tp.settings', {}).memes ?? get('np.settings', {}).memes;
+  memes.checked = cur !== false;
+  // Begroeting: met memes aan willekeurig Ewa drerrie / Yo bro / Hey gast (één keer per bezoek gekozen)
+  const GREET = ['Ewa drerrie', 'Yo bro', 'Hey gast'][Math.floor(Math.random() * 3)];
+  const greet = () => { document.getElementById('greet').textContent = memes.checked ? GREET : 'Hoi'; };
+  greet();
+  memes.addEventListener('change', () => {
+    KEYS.forEach(k => set(k, Object.assign(get(k, {}), { memes: memes.checked })));
+    greet();
+  });
+  const d2 = n => String(n).padStart(2, '0');
+  // Wie speelde: rondes van vóór de naam-per-ronde tonen een streepje; lege naam = pimpelmees
+  const who = r => !('name' in r) ? '–' : (r.name || DEFAULT);
+  const last = (key, id) => {
+    const r = get(key, [])[0]; if (!r) return;
+    const d = new Date(r.d); const el = document.getElementById(id);
+    el.textContent = `Laatst: ${who(r)} · ${d2(d.getDate())}/${d2(d.getMonth() + 1)} · ✓ ${r.ok} ✗ ${r.bad}`;
+    el.hidden = false;
+  };
+  last('sp.history', 'lastSums');
+  last('tp.history', 'lastTables');
+
+  // ---- Rekenpuzzels (4e en 5e leerjaar): één tegel per soort oefening ----
+  const NP = {
+    brug: ['🌉', 'Brugsommen', 'Over het tiental of honderdtal', ['tot 100', 'tot 1000', 'met geld']],
+    dubbel: ['✌️', 'Dubbel, helft & veelvoud', 'Dubbel, helft, veelvouden', ['makkelijker', 'gewoon', 'moeilijker']],
+    plaats: ['🏛️', 'Plaatswaarde', 'D, H, T, E tot 10 000', ['makkelijker', 'gewoon', 'moeilijker']],
+    maal: ['🧮', 'Cijferend vermenigvuldigen', 'Met een getal van 2 cijfers', ['× 11 tot 19', '× 11 tot 49', '3 cijfers × 2 cijfers']],
+    kommaplus: ['💶', 'Kommagetallen + en −', 'Met geld en maten', ['met geld', 'geld en maten', 'ook E, t, h']],
+    kommamaal: ['📏', 'Kommagetallen ×', 'Vergeet de komma niet', ['met eenheid', 'met en zonder eenheid', '× 2 cijfers']],
+    delen: ['🍪', 'Delen en staartdeling', 'Ook met komma', ['deeltafels', 'staartdeling', 'met komma']]
+  };
+  document.getElementById('minis').innerHTML = Object.entries(NP).map(([k, t]) =>
+    `<a class="mini" href="wiskunde/rekenpuzzel/index.html#${k}"><span class="ico">${t[0]}</span><b>${t[1]}</b><span class="s">${t[2]}</span></a>`).join('');
+
+  // ---- Historiek van alle spelletjes samen ----
+  const LEVELS = { tot10: 'tot 10', zonder: 'tot 20 zonder brug', met: 'tot 20 met brug', alles: 'alles tot 20' };
+  const OPS = { plus: '+', min: '−', beide: '+ −' };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const what = r => r.game === 'reken'
+    ? (NP[r.type] ? `${NP[r.type][1]} (${NP[r.type][3][r.level] || ''})` : '')
+    : r.game === 'tafels'
+    ? ((r.tables || []).length === 10 ? 'alle tafels' : 'tafel ' + (r.tables || []).join(', '))
+    : `${OPS[r.ops] || ''} ${LEVELS[r.level] || ''}`;
+  const icon = r => r.game === 'reken' ? (NP[r.type] || ['🧮'])[0] : r.game === 'tafels' ? '🔢' : '🧩';
+  let filter = null, shown = 15;
+  function allRounds() {
+    return [...get('sp.history', []).map(r => Object.assign({ game: 'sommen' }, r)),
+            ...get('tp.history', []).map(r => Object.assign({ game: 'tafels' }, r)),
+            ...get('np.history', []).map(r => Object.assign({ game: 'reken' }, r))].sort((a, b) => b.d - a.d);
+  }
+  function renderHist() {
+    const all = allRounds();
+    const names = [...new Set(all.map(who))];
+    if (filter !== null && !names.includes(filter)) filter = null;
+    document.getElementById('chips').innerHTML = names.length > 1
+      ? [`<button class="${filter === null ? 'on' : ''}" data-n="">Iedereen</button>`,
+         ...names.map(n => `<button class="${filter === n ? 'on' : ''}" data-n="${esc(n)}">${esc(n)}</button>`)].join('')
+      : '';
+    const rows = filter === null ? all : all.filter(r => who(r) === filter);
+    const H = document.getElementById('hist');
+    if (!rows.length) { H.innerHTML = '<p class="empty">Nog geen rondes gespeeld.</p>'; document.getElementById('more').hidden = true; return; }
+    H.innerHTML = `<table><thead><tr><th>Wanneer</th><th>Wie</th><th>Spel</th><th>Oefening</th><th>🧩</th><th>✓</th><th>✗</th><th>Gem.</th><th>Fout</th></tr></thead><tbody>` +
+      rows.slice(0, shown).map(r => {
+        const d = new Date(r.d);
+        return `<tr><td>${d2(d.getDate())}/${d2(d.getMonth() + 1)} ${d2(d.getHours())}:${d2(d.getMinutes())}</td>
+          <td class="who">${esc(who(r))}</td><td>${icon(r)}</td><td>${what(r)}</td>
+          <td>${r.n}</td><td>${r.ok}</td><td>${r.bad}</td><td>${(r.avg || 0).toFixed(1).replace('.', ',')}s</td>
+          <td class="w">${(r.wrongs || []).map(esc).join(' · ')}</td></tr>`;
+      }).join('') + '</tbody></table>';
+    document.getElementById('more').hidden = rows.length <= shown;
+  }
+  document.getElementById('chips').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    filter = b.dataset.n === '' ? null : b.dataset.n; shown = 15; renderHist();
+  });
+  document.getElementById('more').addEventListener('click', () => { shown += 15; renderHist(); });
+  renderHist();
+  window.addEventListener('pageshow', () => { renderHist(); last('sp.history', 'lastSums'); last('tp.history', 'lastTables'); });
+})();
+</script>
+</body>
+</html>

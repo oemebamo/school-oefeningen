@@ -1,0 +1,31 @@
+EIGEN GELUIDJES
+===============
+Spreek een geluidje in (bv. met Dictafoon op iPhone of Mac), bewaar het hier
+met een van de namen hieronder (hoofdletters en spaties mogen: "Ma stobbe.m4a" werkt ook), en voer daarna in de hoofdmap uit:
+
+    sh update-geluiden.sh
+
+Bestandstype: .m4a (standaard van Dictafoon) of .mp3.
+Spaties en hoofdletters mogen: 'Ma stobbe.m4a' werkt net zo goed als 'ma-stobbe.m4a'.
+Ontbreekt een bestand, dan gebruikt de app gewoon de computerstem.
+
+Bestandsnaam        Wanneer
+------------        -------
+ma-stobbe.m4a       stopknop tijdens een ronde ("Ma stobbe?")
+six-seven.m4a       6 en 7 in de som
+slay-girl.m4a       4 juist na elkaar
+mega.m4a            6 juist na elkaar
+let-him-cook.m4a    8 juist na elkaar
+sigma.m4a           10 juist na elkaar
+good-boy.m4a        juist na een fout
+oh-my-days.m4a      juist na een fout
+noncha.m4a          supersnel antwoord
+clock-it.m4a        supersnel antwoord
+skibidi.m4a         heel zelden, zomaar
+cringe.m4a          fout antwoord
+cooked.m4a          fout antwoord
+bruh.m4a            fout antwoord
+aina.m4a            fout antwoord
+slay.m4a            einde van een ronde met fouten
+heftig.m4a          einde van een ronde zonder fouten
+glamour.m4a         einde van een ronde zonder fouten

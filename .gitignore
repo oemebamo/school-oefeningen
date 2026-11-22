@@ -1,0 +1,5 @@
+# Video's blijven lokaal (eigen opnames en clips van anderen gaan niet online).
+# Online laadt de app gewoon geen video's uit de map; op elk toestel kan je er zelf toevoegen.
+wiskunde/hoofdrekenen-20-puzzel/videos/
+backups/
+.DS_Store
