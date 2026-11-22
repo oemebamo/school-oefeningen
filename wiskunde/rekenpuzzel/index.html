@@ -189,7 +189,7 @@ td.w{color:var(--muted);font-size:13px}
     <a class="homelink" href="../../index.html">← Alle spelletjes</a>
     <header class="hero">
       <div class="logo" id="logo">🌉</div>
-      <div><h1 id="title">Rekenpuzzel</h1><p id="sub"></p><p id="hello">Hoi pimpelmees! Klaar om te puzzelen?</p></div>
+      <div><h1 id="title">Rekenpuzzel</h1><p id="sub"></p><p id="hello">Hoi wolf! Klaar om te puzzelen?</p></div>
     </header>
     <button id="go" class="go">Start ▶</button>
 
@@ -295,7 +295,7 @@ if (TYPES[fromHash]) S.type = fromHash;           // de homepage linkt rechtstre
 if (!TYPES[S.type]) S.type = 'brug';
 // De naam en 'Irritante memes' stel je in op de homepage
 const GREET = pick(['Ewa drerrie', 'Yo bro', 'Hey gast']); // begroeting bij memes, één keer per bezoek gekozen
-const NAME = () => S.name || 'pimpelmees'; // standaardnaam als er nog niets is ingevuld
+const NAME = () => S.name || 'wolf'; // standaardnaam als er nog niets is ingevuld (bovenbouw = wolven)
 const saveS = () => store.set('np.settings', S);
 const LV = () => S.level[S.type] ?? 1;
 const STEPS = () => !!(TYPES[S.type].steps && S.stepsBy[S.type]);
