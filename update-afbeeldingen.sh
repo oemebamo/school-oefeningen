@@ -1,9 +1,14 @@
 #!/bin/sh
-# Maakt wiskunde/afbeeldingen/afbeeldingen.js opnieuw aan met alle .jpg/.jpeg/.png/.webp in die map.
-cd "$(dirname "$0")/wiskunde/afbeeldingen" || exit 1
-{
-  printf 'window.AFBEELDINGEN = [\n'
-  ls | grep -iE '\.(jpe?g|png|webp)$' | sed 's/"/\\"/g; s/.*/  "&",/'
-  printf '];\n'
-} > afbeeldingen.js
-echo "afbeeldingen.js bijgewerkt:"; cat afbeeldingen.js
+# Maakt afbeeldingen.js opnieuw aan in elke afbeeldingenmap, met alle .jpg/.jpeg/.png/.webp erin.
+#   wiskunde/afbeeldingen/  -> pimpelmezen (Sommenpuzzel, Tafelpuzzel)
+#   afbeeldingen-wolven/    -> wolven (Rekenpuzzel, Frans)
+cd "$(dirname "$0")" || exit 1
+for d in wiskunde/afbeeldingen afbeeldingen-wolven; do
+  [ -d "$d" ] || continue
+  {
+    printf 'window.AFBEELDINGEN = [\n'
+    ls "$d" | grep -iE '\.(jpe?g|png|webp)$' | sed 's/"/\\"/g; s/.*/  "&",/'
+    printf '];\n'
+  } > "$d/afbeeldingen.js"
+  echo "$d: $(grep -c '",' "$d/afbeeldingen.js") afbeeldingen"
+done

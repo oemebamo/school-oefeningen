@@ -5,9 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Frans">
+<meta name="apple-mobile-web-app-title" content="Hippo's Oefeningen">
 <meta name="theme-color" content="#eef4ff">
-<title>Franse werkwoorden</title>
+<title>Franse werkwoorden · Hippo's Oefeningen</title>
+<meta name="description" content="Rekenen, tafels en Frans voor pimpelmezen en wolven">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="icon" href="../../icons/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../../icons/apple-touch-icon.png">
+<link rel="manifest" href="../../manifest.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hippo's Oefeningen">
+<meta property="og:title" content="Franse werkwoorden · Hippo's Oefeningen">
+<meta property="og:description" content="Rekenen, tafels en Frans voor pimpelmezen en wolven">
+<meta property="og:url" content="https://oemebamo.github.io/school-oefeningen/frans/werkwoorden/">
+<meta property="og:image" content="https://oemebamo.github.io/school-oefeningen/icons/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <style>
 :root{
   --bg:#eef4ff; --ink:#23264a; --muted:#6b6f8f; --card:#ffffff; --line:#dbe6fb;
@@ -103,6 +117,7 @@ td.w{color:var(--muted);font-size:13px}
 .stage{position:relative;width:min(100cqw, calc(100cqh * 16 / 9));aspect-ratio:16/9;border-radius:20px;overflow:hidden;
   background:#0f2557;box-shadow:0 6px 0 rgba(35,38,74,.15),0 18px 40px rgba(35,38,74,.18)}
 #vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+#pic{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 35%;background:#000}
 #fallback{position:absolute;inset:0;z-index:0;display:grid;place-items:center;overflow:hidden;
   background:linear-gradient(120deg,#2563eb,#38bdf8,#1d4ed8,#60a5fa,#2563eb);background-size:400% 400%;animation:grad 10s ease infinite}
 @keyframes grad{50%{background-position:100% 50%}}
@@ -252,6 +267,7 @@ td.w{color:var(--muted);font-size:13px}
   <div id="q" class="q"></div>
   <div class="board"><div class="stage">
     <div id="fallback"><div class="fbtext" id="fbtext">Bravo!</div></div>
+    <img id="pic" alt="" hidden>
     <video id="vid" playsinline webkit-playsinline muted loop preload="auto"></video>
     <svg id="puz" viewBox="0 0 1600 900" preserveAspectRatio="none"></svg>
     <div id="toast"></div>
@@ -271,6 +287,7 @@ td.w{color:var(--muted);font-size:13px}
 
 <script src="../../geluiden/geluiden.js"></script>
 <script src="../../wiskunde/hoofdrekenen-20-puzzel/videos/videos.js"></script>
+<script src="../../afbeeldingen-wolven/afbeeldingen.js"></script>
 <script>
 (() => {
 'use strict';
@@ -371,6 +388,10 @@ async function initVideos() {
   (Array.isArray(window.VIDEOS) ? window.VIDEOS : []).forEach(name => {
     videos.push({ id: 'map-' + name, name, url: VIDEO_DIR + encodeURIComponent(name), temp: false, folder: true });
   });
+  // Wolven-afbeeldingen uit afbeeldingen-wolven/ (lijst in afbeeldingen.js): wisselen af met de video's
+  (Array.isArray(window.AFBEELDINGEN) ? window.AFBEELDINGEN : []).forEach(name => {
+    videos.push({ id: 'img-' + name, name, url: '../../afbeeldingen-wolven/' + encodeURIComponent(name), temp: false, folder: true, img: true });
+  });
   renderVList();
   // Extra video's die op dit toestel bewaard zijn (IndexedDB)
   try {
@@ -398,7 +419,7 @@ function renderVList() {
     L.innerHTML = '<p class="hint" style="margin:0">Nog geen video\'s. Zonder video zit er een kleurige verrassing achter de puzzel.</p>';
   } else {
     L.innerHTML = videos.map(v => `<div class="vitem ${v.id === nextVid ? 'next' : ''}" data-id="${v.id}">
-      <span class="vname">🎬 ${esc(v.name)}</span>${v.temp ? '<span class="vtemp">niet bewaard</span>' : ''}${v.folder ? '<span class="vtemp">uit map</span>' : ''}
+      <span class="vname">${v.img ? '🖼️' : '🎬'} ${esc(v.name)}</span>${v.temp ? '<span class="vtemp">niet bewaard</span>' : ''}${v.folder ? '<span class="vtemp">uit map</span>' : ''}
       <span class="vtag">VOLGENDE</span>${v.folder ? '' : `<button class="vdel" data-del="${v.id}" aria-label="Verwijderen">✕</button>`}</div>`).join('');
   }
   $('#vhint').textContent = 'Video\'s uit de map wiskunde/hoofdrekenen-20-puzzel/videos/ worden automatisch geladen. ' + (persist
@@ -638,7 +659,12 @@ function startRound() {
   const v = pickVideo();
   lastVid = v ? v.id : null;
   $('#fallback').hidden = !!v;
-  if (v) {
+  const pic = $('#pic');
+  pic.hidden = !(v && v.img);
+  if (v && v.img) {
+    pic.src = v.url;
+    vid.pause(); vid.removeAttribute('src'); vid.load(); vid.hidden = true;
+  } else if (v) {
     vid.hidden = false; vid.loop = true; vid.src = v.url;
     vid.muted = !S.videoSound;
     playVid();
@@ -653,6 +679,7 @@ function playVid() {
   const p = vid.play();
   if (p && p.catch) p.catch(() => { vid.muted = true; updateSnd(); vid.play().catch(() => {}); });
 }
+$('#pic').addEventListener('error', () => { $('#pic').hidden = true; $('#fallback').hidden = false; });
 vid.addEventListener('error', () => { if (vid.getAttribute('src')) { vid.hidden = true; $('#fallback').hidden = false; updateSnd(); toast('Video kan niet spelen', 'bad'); } });
 
 function nextQ() {
