@@ -168,6 +168,8 @@ td.w{color:var(--muted);font-size:13px}
 .qrow .okv{color:var(--ok)}
 .qrow .note{font-size:.38em;color:var(--muted);font-weight:700;align-self:center}
 .qhead{font-size:.4em;color:var(--muted);font-weight:800}
+.qhead.big{font-size:.62em;color:var(--ink)}
+.qhead .hl{color:#fff;background:var(--accent);border-radius:.18em;padding:0 .12em}
 .qhead b{background:#e3edfc;color:var(--accent);border-radius:8px;padding:1px 8px;margin-right:6px}
 .pad{grid-template-columns:repeat(7,1fr);grid-template-areas:"k1 k2 k3 k4 k5 k6 kd" "k7 k8 k9 k0 kc ko ko"}
 .pad .kc{background:#e3edfc;color:#1e40af}
@@ -707,17 +709,20 @@ function genKommaMaal(level, steps) {
 
 /* --- Week 6: delen en staartdeling --- */
 function longDiv(N, d) {
-  const digits = String(N).split('').map(Number);
+  const digits = String(N).split('').map(Number), L = digits.length;
   let i = 1, cur = digits[0], dec = false;
-  while (cur < d && i < digits.length) { cur = cur * 10 + digits[i]; i++; }
+  while (cur < d && i < L) { cur = cur * 10 + digits[i]; i++; }
+  const PLACE = ['eenheden', 'tientallen', 'honderdtallen'];
   const rows = [];
+  // eerste stap: "Begin met de 3 (tientallen)": het stuk van het getal waar de deler al in past
+  let intro = `Begin met de ${cur} (${PLACE[L - i]}): `, hl = i;
   for (let g = 0; g < 8; g++) {
     const q = Math.floor(cur / d), r = cur - q * d;
-    rows.push(row([`${dec ? 'Komma en een 0 erbij: ' : ''}Hoe vaak past ${d} in ${cur}?`, BOX], q, { txt: true }));
-    const more = i < digits.length || (r > 0 && !dec);
-    if (more) rows.push(row([`Wat blijft er over? ${cur} − ${q * d} =`, BOX], r, { txt: true }));
-    if (i < digits.length) { cur = r * 10 + digits[i]; i++; }
-    else if (r > 0 && !dec) { dec = true; cur = r * 10; }
+    rows.push(row([`${intro}hoe vaak past ${d} in ${cur}?`, BOX], q, { txt: true, hl, hlDec: dec }));
+    const more = i < L || (r > 0 && !dec);
+    if (more) rows.push(row([`Wat blijft er over? ${cur} − ${q * d} =`, BOX], r, { txt: true, hl, hlDec: dec }));
+    if (i < L) { intro = `Zet de ${digits[i]} erbij: `; cur = r * 10 + digits[i]; i++; hl = i; }
+    else if (r > 0 && !dec) { intro = 'Komma en een 0 erbij: '; dec = true; cur = r * 10; }
     else break;
   }
   return rows;
@@ -731,7 +736,7 @@ function genDelen(level, steps) {
   const label = `${N} : ${d} = ${nl(q)}`;
   const rows = steps && level > 0 ? longDiv(N, d) : [];
   rows.push(row([N, ':', d, '=', BOX], q, { dec: q % 1 ? 1 : 0 }));
-  return Q(`${N}:${d}`, rows, label, [N, d, q], rows.length > 1 ? { head: `${N} : ${d} = ?` } : {});
+  return Q(`${N}:${d}`, rows, label, [N, d, q], rows.length > 1 ? { head: `${N} : ${d} = ?`, div: [N, d] } : {});
 }
 
 const GEN = {
@@ -828,7 +833,13 @@ function partHTML(p) {
 }
 function renderQ() {
   const q = G.cur, html = [];
-  if (q.warm || q.head) html.push(`<div class="qhead">${q.warm ? '<b>Opwarmer</b> ' : ''}${q.head ? esc(q.head) : ''}</div>`);
+  const cr = q.rows[G.rowI];
+  let headTxt = q.head ? esc(q.head) : '';
+  if (q.div && cr.hl) {                                    // 38 : 2 → de 3 in kleur: daar begin je mee
+    const ds = String(q.div[0]);
+    headTxt = `<span class="hl">${ds.slice(0, cr.hl)}</span>${ds.slice(cr.hl)}${cr.hlDec ? '<span class="hl">,0</span>' : ''} : ${q.div[1]} = ?`;
+  }
+  if (q.warm || q.head) html.push(`<div class="qhead${q.div ? ' big' : ''}">${q.warm ? '<b>Opwarmer</b> ' : ''}${headTxt}</div>`);
   q.rows.forEach((r, i) => {
     if (i > G.rowI || i < G.rowI - 2) return;               // toon de huidige stap en hooguit 2 vorige
     const done = i < G.rowI;
