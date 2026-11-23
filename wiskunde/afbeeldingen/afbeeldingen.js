@@ -4,6 +4,7 @@ window.AFBEELDINGEN = [
   "kerstmees.jpg",
   "klikmees.jpg",
   "knuffelmees.jpg",
+  "magische-mees.jpg",
   "magneetmees.jpg",
   "poppenmees.jpg",
   "sintmees.jpg",
