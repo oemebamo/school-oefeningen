@@ -8,4 +8,5 @@ window.AFBEELDINGEN = [
   "poppenmees.jpg",
   "sintmees.jpg",
   "speelmees.jpg",
+  "tekenmees.jpg",
 ];
