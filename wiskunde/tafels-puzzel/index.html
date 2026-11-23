@@ -691,7 +691,13 @@ function finish() {
   const win = !S.memes ? ['Bravo', '🎉', null] : G.bad === 0
     ? pick([['Heftig', '🤯', 'heftig!'], ['Glamour', '✨💖', 'glamour!']]) : ['Slay', '💅✨', 'slay!'];
   $('#q').innerHTML = `<span class="win">${win[0]} ${esc(NAME())}! ${win[1]}</span>`;
-  if (win[2]) setTimeout(() => say(win[2], win[0] === 'Slay' ? 'en-US' : 'nl-BE'), 900);
+  if (win[2]) setTimeout(() => {
+    // Slay + naam (als er een naam is ingevuld). Eigen opname van "Slay!"? Dan die, en de computerstem zegt de naam erachter.
+    if (win[0] === 'Slay' && S.name) {
+      if (S.sfx && playRecording('slay!')) setTimeout(() => say(S.name, 'nl-BE'), 800);
+      else say('slay, ' + S.name + '!', 'en-US');
+    } else say(win[2], win[0] === 'Slay' ? 'en-US' : 'nl-BE');
+  }, 900);
   const mm = Math.floor(secs / 60), ss = String(secs % 60).padStart(2, '0');
   $('#endp').innerHTML = `
     <div class="stats">
