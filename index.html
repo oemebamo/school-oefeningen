@@ -72,6 +72,7 @@ td.who{font-weight:800}
 .sub{font-size:21px;color:var(--muted);margin:0 0 26px}
 .level{font-size:20px;margin:30px 0 14px;display:flex;align-items:baseline;gap:10px}
 .level small{font-size:15px;color:var(--muted);font-weight:600}
+.sublevel{font-size:17px;color:var(--muted);margin:18px 0 10px;text-transform:uppercase;letter-spacing:.5px}
 .minis{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
 .mini{display:flex;flex-direction:column;gap:4px;padding:16px 18px;border-radius:22px;color:#fff;text-decoration:none;
   background:linear-gradient(135deg,#2563eb,#38bdf8);box-shadow:0 6px 0 rgba(0,0,0,.16);transition:transform .1s;min-height:120px}
@@ -104,7 +105,7 @@ td.who{font-weight:800}
   <section id="step1" hidden>
     <div class="pick">
       <button class="pm" data-groep="pimpelmees"><span class="ico">🐦</span><b>Ik ben een pimpelmees</b><small>Middenbouw: sommen tot 20 en tafels</small></button>
-      <button class="wolf" data-groep="wolf"><span class="ico">🐺</span><b>Ik ben een wolf</b><small>Bovenbouw: brugsommen, kommagetallen, staartdeling…</small></button>
+      <button class="wolf" data-groep="wolf"><span class="ico">🐺</span><b>Ik ben een wolf</b><small>Bovenbouw: brugsommen, kommagetallen, Franse werkwoorden…</small></button>
     </div>
   </section>
   <div id="main" hidden>
@@ -129,7 +130,10 @@ td.who{font-weight:800}
   </section>
   <section id="grpWolf" hidden>
   <h2 class="level">🐺 Wolven <small>bovenbouw</small><button class="swap" data-swap>Andere groep</button></h2>
+  <h3 class="sublevel">Rekenen</h3>
   <div class="minis" id="minis"></div>
+  <h3 class="sublevel">Frans</h3>
+  <div class="minis" id="frMinis"></div>
   </section>
   <label class="opts">
     <span style="font-size:34px">😜</span>
@@ -158,8 +162,8 @@ td.who{font-weight:800}
   let groep = get('oef.groep', null);
   let DEFAULT = groep === 'wolf' ? 'wolf' : 'pimpelmees';
   const DEFAULTS = ['pimpelmees', 'wolf'];
-  const KEYS = ['sp.settings', 'tp.settings', 'np.settings']; // sommen, tafels, rekenpuzzels
-  let name = (get('sp.settings', {}).name || get('tp.settings', {}).name || get('np.settings', {}).name || '');
+  const KEYS = ['sp.settings', 'tp.settings', 'np.settings', 'fp.settings']; // sommen, tafels, rekenpuzzels, Frans
+  let name = (get('sp.settings', {}).name || get('tp.settings', {}).name || get('np.settings', {}).name || get('fp.settings', {}).name || '');
   el.textContent = name || DEFAULT;
   // Naam aanpassen: tik erop, typ, Enter of ergens anders tikken bewaart (voor beide spelletjes)
   const save = () => {
@@ -180,7 +184,7 @@ td.who{font-weight:800}
   });
   // Irritante memes: één schakelaar voor beide spelletjes (standaard aan)
   const memes = document.getElementById('memes');
-  const cur = get('sp.settings', {}).memes ?? get('tp.settings', {}).memes ?? get('np.settings', {}).memes;
+  const cur = get('sp.settings', {}).memes ?? get('tp.settings', {}).memes ?? get('np.settings', {}).memes ?? get('fp.settings', {}).memes;
   memes.checked = cur === true;               // standaard uit
   // Begroeting: met memes aan willekeurig Ewa drerrie / Yo bro / Hey gast (één keer per bezoek gekozen)
   const GREET = ['Ewa drerrie', 'Yo bro', 'Hey gast'][Math.floor(Math.random() * 3)];
@@ -192,7 +196,7 @@ td.who{font-weight:800}
   });
   const d2 = n => String(n).padStart(2, '0');
   // Wie speelde: rondes van vóór de naam-per-ronde tonen een streepje; lege naam = pimpelmees
-  const who = r => !('name' in r) ? '–' : (r.name || (r.game === 'reken' ? 'wolf' : 'pimpelmees'));
+  const who = r => !('name' in r) ? '–' : (r.name || (r.game === 'reken' || r.game === 'frans' ? 'wolf' : 'pimpelmees'));
   const last = (key, id) => {
     const r = get(key, [])[0]; if (!r) return;
     const d = new Date(r.d); const el = document.getElementById(id);
@@ -215,20 +219,34 @@ td.who{font-weight:800}
   document.getElementById('minis').innerHTML = Object.entries(NP).map(([k, t]) =>
     `<a class="mini" href="wiskunde/rekenpuzzel/index.html#${k}"><span class="ico">${t[0]}</span><b>${t[1]}</b><span class="s">${t[2]}</span></a>`).join('');
 
+  // ---- Frans (wolven): werkwoorden in de tegenwoordige tijd ----
+  const FR = {
+    er: ['🗣️', 'Werkwoorden op -ER', 'parler, chanter, manger…'],
+    irre: ['🔁', 'Werkwoorden op -IR en -RE', 'finir, choisir, attendre, répondre'],
+    onregel: ['⭐', 'Onregelmatige werkwoorden', 'être, avoir, aller, faire…'],
+    alles: ['🎲', 'Alles door elkaar', 'Alle werkwoorden van het blad']
+  };
+  const FRLV = ['kiezen', 'typen'];
+  document.getElementById('frMinis').innerHTML = Object.entries(FR).map(([k, t]) =>
+    `<a class="mini" href="frans/werkwoorden/index.html#${k}"><span class="ico">${t[0]}</span><b>${t[1]}</b><span class="s">${t[2]}</span></a>`).join('');
+
   // ---- Historiek van alle spelletjes samen ----
   const LEVELS = { tot10: 'tot 10', zonder: 'tot 20 zonder brug', met: 'tot 20 met brug', alles: 'alles tot 20' };
   const OPS = { plus: '+', min: '−', beide: '+ −' };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const what = r => r.game === 'reken'
+  const what = r => r.game === 'frans'
+    ? (FR[r.type] ? `Frans: ${FR[r.type][1]} (${FRLV[r.level] || ''})` : 'Frans')
+    : r.game === 'reken'
     ? (NP[r.type] ? `${NP[r.type][1]} (${NP[r.type][3][r.level] || ''})` : '')
     : r.game === 'tafels'
     ? ((r.tables || []).length === 10 ? 'alle tafels' : 'tafel ' + (r.tables || []).join(', '))
     : `${OPS[r.ops] || ''} ${LEVELS[r.level] || ''}`;
-  const icon = r => r.game === 'reken' ? (NP[r.type] || ['🧮'])[0] : r.game === 'tafels' ? '🔢' : '🧩';
+  const icon = r => r.game === 'frans' ? (FR[r.type] || ['🇫🇷'])[0] : r.game === 'reken' ? (NP[r.type] || ['🧮'])[0] : r.game === 'tafels' ? '🔢' : '🧩';
   let filter = null, shown = 15;
   function allRounds() {   // enkel de spelletjes van de gekozen groep
     const rounds = groep === 'wolf'
-      ? get('np.history', []).map(r => Object.assign({ game: 'reken' }, r))
+      ? [...get('np.history', []).map(r => Object.assign({ game: 'reken' }, r)),
+         ...get('fp.history', []).map(r => Object.assign({ game: 'frans' }, r))]
       : [...get('sp.history', []).map(r => Object.assign({ game: 'sommen' }, r)),
          ...get('tp.history', []).map(r => Object.assign({ game: 'tafels' }, r))];
     return rounds.sort((a, b) => b.d - a.d);
@@ -284,7 +302,7 @@ td.who{font-weight:800}
   }));
   showGroep();
 
-  // ---- Alles wissen: enkel wat deze spelletjes bewaren (oef. = groep, sp. = sommen, tp. = tafels, np. = rekenpuzzels) ----
+  // ---- Alles wissen: enkel wat deze spelletjes bewaren (oef. = groep, sp. = sommen, tp. = tafels, np. = rekenpuzzels, fp. = Frans) ----
   // Niet localStorage.clear(): andere sites op hetzelfde adres (oemebamo.github.io) bewaren daar ook dingen.
   const resetBtn = document.getElementById('reset');
   let armT = 0;
@@ -296,7 +314,7 @@ td.who{font-weight:800}
     }
     clearTimeout(armT);
     try {
-      Object.keys(localStorage).filter(k => /^(oef|sp|tp|np)\./.test(k)).forEach(k => localStorage.removeItem(k));
+      Object.keys(localStorage).filter(k => /^(oef|sp|tp|np|fp)\./.test(k)).forEach(k => localStorage.removeItem(k));
     } catch (e) {}
     location.reload();
   });
