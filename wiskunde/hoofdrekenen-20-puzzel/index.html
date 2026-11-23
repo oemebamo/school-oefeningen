@@ -103,6 +103,7 @@ td.w{color:var(--muted);font-size:13px}
 .stage{position:relative;width:min(100cqw, calc(100cqh * 16 / 9));aspect-ratio:16/9;border-radius:20px;overflow:hidden;
   background:#2a2160;box-shadow:0 6px 0 rgba(35,38,74,.15),0 18px 40px rgba(35,38,74,.18)}
 #vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+#pic{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 35%;background:#000}
 #fallback{position:absolute;inset:0;z-index:0;display:grid;place-items:center;overflow:hidden;
   background:linear-gradient(120deg,#4d7cff,#9b5cff,#56c2ff,#b07cff,#4d7cff);background-size:400% 400%;animation:grad 10s ease infinite}
 @keyframes grad{50%{background-position:100% 50%}}
@@ -206,6 +207,7 @@ td.w{color:var(--muted);font-size:13px}
   <div id="q" class="q"></div>
   <div class="board"><div class="stage">
     <div id="fallback"><div class="fbtext" id="fbtext">Bravo!</div></div>
+    <img id="pic" alt="" hidden>
     <video id="vid" playsinline webkit-playsinline muted loop preload="auto"></video>
     <svg id="puz" viewBox="0 0 1600 900" preserveAspectRatio="none"></svg>
     <div id="toast"></div>
@@ -226,6 +228,7 @@ td.w{color:var(--muted);font-size:13px}
 
 <script src="../../geluiden/geluiden.js"></script>
 <script src="videos/videos.js"></script>
+<script src="../afbeeldingen/afbeeldingen.js"></script>
 <script>
 (() => {
 'use strict';
@@ -295,6 +298,10 @@ async function initVideos() {
   (Array.isArray(window.VIDEOS) ? window.VIDEOS : []).forEach(name => {
     videos.push({ id: 'map-' + name, name, url: 'videos/' + encodeURIComponent(name), temp: false, folder: true });
   });
+  // Afbeeldingen uit wiskunde/afbeeldingen/ (lijst in afbeeldingen.js): wisselen af met de video's
+  (Array.isArray(window.AFBEELDINGEN) ? window.AFBEELDINGEN : []).forEach(name => {
+    videos.push({ id: 'img-' + name, name, url: '../afbeeldingen/' + encodeURIComponent(name), temp: false, folder: true, img: true });
+  });
   renderVList();
   // Extra video's die op dit toestel bewaard zijn (IndexedDB)
   try {
@@ -322,7 +329,7 @@ function renderVList() {
     L.innerHTML = '<p class="hint" style="margin:0">Nog geen video\'s. Zonder video zit er een kleurige verrassing achter de puzzel.</p>';
   } else {
     L.innerHTML = videos.map(v => `<div class="vitem ${v.id === nextVid ? 'next' : ''}" data-id="${v.id}">
-      <span class="vname">🎬 ${esc(v.name)}</span>${v.temp ? '<span class="vtemp">niet bewaard</span>' : ''}${v.folder ? '<span class="vtemp">uit map</span>' : ''}
+      <span class="vname">${v.img ? '🖼️' : '🎬'} ${esc(v.name)}</span>${v.temp ? '<span class="vtemp">niet bewaard</span>' : ''}${v.folder ? '<span class="vtemp">uit map</span>' : ''}
       <span class="vtag">VOLGENDE</span>${v.folder ? '' : `<button class="vdel" data-del="${v.id}" aria-label="Verwijderen">✕</button>`}</div>`).join('');
   }
   $('#vhint').textContent = 'Video\'s uit de map videos/ worden automatisch geladen. ' + (persist
@@ -492,7 +499,12 @@ function startRound() {
   const v = pickVideo();
   lastVid = v ? v.id : null;
   $('#fallback').hidden = !!v;
-  if (v) {
+  const pic = $('#pic');
+  pic.hidden = !(v && v.img);
+  if (v && v.img) {
+    pic.src = v.url;
+    vid.pause(); vid.removeAttribute('src'); vid.load(); vid.hidden = true;
+  } else if (v) {
     vid.hidden = false; vid.loop = true; vid.src = v.url;
     vid.muted = !S.videoSound;
     playVid();
@@ -507,6 +519,7 @@ function playVid() {
   const p = vid.play();
   if (p && p.catch) p.catch(() => { vid.muted = true; updateSnd(); vid.play().catch(() => {}); });
 }
+$('#pic').addEventListener('error', () => { $('#pic').hidden = true; $('#fallback').hidden = false; });
 vid.addEventListener('error', () => { if (vid.getAttribute('src')) { vid.hidden = true; $('#fallback').hidden = false; updateSnd(); toast('Video kan niet spelen', 'bad'); } });
 
 function nextQ() {
