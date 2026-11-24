@@ -939,7 +939,7 @@ const SOUNDS = {
   'let him cook': 'let-him-cook', 'mega!': 'mega', 'sigma': 'sigma', 'good boy': 'good-boy',
   'oh my days': 'oh-my-days', 'noncha': 'noncha', 'clock it': 'clock-it', 'skibidi': 'skibidi',
   'cringe': 'cringe', 'cooked': 'cooked', 'bruh': 'bruh', 'aina!': 'aina', 'Maaah, stobbeuh!': 'ma-stobbe',
-  'heftig!': 'heftig', 'glamour!': 'glamour'
+  'heftig!': 'heftig', 'glamour!': 'glamour', 'megaleuk!': 'megaleuk'
 };
 const SOUND_FILES = {};
 (Array.isArray(window.GELUIDEN) ? window.GELUIDEN : []).forEach(f => { SOUND_FILES[f.replace(/\.[^.]+$/, '').toLowerCase().trim().replace(/[\s_]+/g, '-')] = f; }); // 'Ma stobbe.m4a' telt als 'ma-stobbe'
@@ -1030,7 +1030,7 @@ function finish() {
   sfx('win'); confetti();
   // Zonder fouten: Heftig of Glamour, anders Slay
   const win = !S.memes ? ['Bravo', '🎉', null] : G.bad === 0
-    ? pick([['Heftig', '🤯', 'heftig!'], ['Glamour', '✨💖', 'glamour!']]) : ['Slay', '💅✨', 'slay!'];
+    ? pick([['Heftig', '🤯', 'heftig!'], ['Glamour', '✨💖', 'glamour!'], ['Megaleuk', '🤩', 'megaleuk!']]) : ['Slay', '💅✨', 'slay!'];
   $('#q').innerHTML = `<span class="win">${win[0]} ${esc(NAME())}! ${win[1]}</span>`;
   if (win[2]) setTimeout(() => {
     // Slay + naam (als er een naam is ingevuld). Eigen opname van "Slay!"? Dan die, en de computerstem zegt de naam erachter.
