@@ -633,6 +633,8 @@ function memeReady() { return G.asked - (G.lastMeme ?? -99) > MEME_PAUSE; }
 function memeUsed() { G.lastMeme = G.asked; }
 function memeFor(e, ans, fast) {
   if (!S.memes) return null;
+  // Laatste stukje van de puzzel: geen meme, want het eindwoord (Heftig, Slay, ...) komt meteen erna
+  if (G.open.size + 1 >= G.n) return null;
   const nums = [e.a, e.b, e.c];
   if (nums.includes(6) && nums.includes(7)) {            // 6 + 7, 13 − 7 = 6, ...
     const m = $('#meme'); m.classList.remove('show'); void m.offsetWidth; m.classList.add('show');
