@@ -241,6 +241,7 @@ td.w{color:var(--muted);font-size:13px}
         <div class="seg" data-key="pieces"><button data-val="6">6</button><button data-val="9">9</button><button data-val="12">12</button><button data-val="16">16</button><button data-val="20">20</button><button data-val="24">24</button></div></div>
       <div class="row"><label>Extra</label>
         <div class="toggles">
+          <label class="tog"><input type="checkbox" id="nlOnly"> Enkel het Nederlands tonen: zelf vertalen én vervoegen</label>
           <label class="tog"><input type="checkbox" id="sfx"> Geluidjes bij juist en fout</label>
           <label class="tog"><input type="checkbox" id="videoSound"> Videogeluid al tijdens het spelen</label>
         </div></div>
@@ -308,7 +309,7 @@ const TYPES = {
   alles:  { icon: '🎲', title: 'Alles door elkaar', sub: 'Alle werkwoorden van het grammaticablad' }
 };
 const LEVELS = ['kiezen', 'typen'];
-const DEFAULTS = { name: '', type: 'er', level: 0, pieces: 9, sfx: true, videoSound: false, memes: false };
+const DEFAULTS = { name: '', type: 'er', level: 0, pieces: 9, nlOnly: false, sfx: true, videoSound: false, memes: false };
 const S = Object.assign({}, DEFAULTS, store.get('fp.settings', {}));
 const fromHash = location.hash.replace('#', '');
 if (TYPES[fromHash]) S.type = fromHash;           // de homepage linkt rechtstreeks naar #er, #irre, ...
@@ -345,7 +346,7 @@ function syncUI() {
     const k = seg.dataset.key;
     seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(S[k]) === b.dataset.val));
   });
-  $('#sfx').checked = S.sfx; $('#videoSound').checked = S.videoSound;
+  $('#sfx').checked = S.sfx; $('#videoSound').checked = S.videoSound; $('#nlOnly').checked = S.nlOnly;
   $('#hello').textContent = `${S.memes ? GREET : 'Hoi'} ${NAME()}! Klaar om te puzzelen?`;
 }
 $$('.seg[data-key]').forEach(seg => seg.addEventListener('click', e => {
@@ -354,7 +355,7 @@ $$('.seg[data-key]').forEach(seg => seg.addEventListener('click', e => {
   S[k] = k === 'pieces' ? +b.dataset.val : b.dataset.val;
   saveS(); syncUI();
 }));
-['sfx', 'videoSound'].forEach(id => $('#' + id).addEventListener('change', e => { S[id] = e.target.checked; saveS(); syncUI(); }));
+['sfx', 'videoSound', 'nlOnly'].forEach(id => $('#' + id).addEventListener('change', e => { S[id] = e.target.checked; saveS(); syncUI(); }));
 window.addEventListener('hashchange', () => { const h = location.hash.replace('#', ''); if (TYPES[h] && h !== S.type) { S.type = h; saveS(); syncUI(); } });
 
 /* ---------------- Videos (kept on this device in IndexedDB) ---------------- */
@@ -590,12 +591,20 @@ function makeQuestion() {
   let pron = PERS[p];
   if (p === 0 && elide(ans)) pron = 'j’';
   if ((p === 2 || p === 5) && Math.random() < .4) pron = p === 2 ? 'elle' : 'elles';
-  const q = { key: inf + p, head: `${inf} · ${nlw}`, label: `${pron === 'j’' ? 'j’' + ans : pron + ' ' + ans}  (${inf})`,
+  const q = { key: inf + p, head: S.nlOnly ? nlw : `${inf} · ${nlw}`, nlw, label: `${pron === 'j’' ? 'j’' + ans : pron + ' ' + ans}  (${inf})`,
               nums: [], verb: inf, group, rows: [] };
   if (LV() === 0) {
     // meerkeuze: juiste vorm + valkuil + andere vormen van hetzelfde werkwoord
     const opts = new Set([ans]);
     shuffle(traps(inf, group, p, forms)).forEach(t => { if (opts.size < 2 && t !== ans) opts.add(t); });
+    if (S.nlOnly) {
+      // Enkel Nederlands: ook dezelfde persoon van andere werkwoorden, zodat je echt moet weten welk werkwoord het is.
+      // Bij j’ enkel werkwoorden die ook met een klinker beginnen, zodat "j’" niets verraadt.
+      shuffle(pool().filter(v => v[0] !== inf)).forEach(([oi, , og]) => {
+        const f = conj(oi, og)[p];
+        if (opts.size < 4 && !opts.has(f) && (p !== 0 || !!elide(f) === !!elide(ans))) opts.add(f);
+      });
+    }
     shuffle(forms).forEach(f => { if (opts.size < 4 && f !== ans) opts.add(f); });
     q.rows.push({ parts: [pron, BOX], ans, kind: 'choice', options: shuffle([...opts]) });
   } else {
@@ -609,6 +618,10 @@ const plain = s => norm(s).normalize('NFD').replace(/[̀-ͯ]/g, '');
 const fmtAns = r => r.ans;
 // Uitleg bij een fout, kort en in de woorden van het grammaticablad
 function tipFor(q, given) {
+  const t = tipText(q, given);
+  return S.nlOnly ? `${q.nlw} = ${q.verb}. ${t}` : t;
+}
+function tipText(q, given) {
   const { verb, group } = q, a = q.rows[0].ans;
   if (/^(mang|nag)eons$/.test(a)) return 'Bij nous: mang + e + ons, zo blijft de klank zacht.';
   if (a === 'commençons') return 'Bij nous: commenç + ons, met een ç.';
