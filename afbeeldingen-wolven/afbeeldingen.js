@@ -6,6 +6,7 @@ window.AFBEELDINGEN = [
   "nachtwacht.jpg",
   "origami-wolf.jpg",
   "sintwolf.jpg",
+  "vrijheidswolf.jpg",
   "wolven-klas.jpg",
   "wolven-uitstap.jpg",
   "zingende-wolf.jpg",
