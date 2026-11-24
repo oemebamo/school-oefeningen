@@ -1,4 +1,5 @@
 window.AFBEELDINGEN = [
+  "boomwolf.jpg",
   "knuffelwolf.jpg",
   "kussengevecht.jpg",
   "laptopwolf.jpg",
