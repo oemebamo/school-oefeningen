@@ -599,7 +599,7 @@ const SOUNDS = {
   'let him cook': 'let-him-cook', 'mega!': 'mega', 'sigma': 'sigma', 'good boy': 'good-boy',
   'oh my days': 'oh-my-days', 'noncha': 'noncha', 'clock it': 'clock-it', 'skibidi': 'skibidi',
   'cringe': 'cringe', 'cooked': 'cooked', 'bruh': 'bruh', 'aina!': 'aina', 'Maaah, stobbeuh!': 'ma-stobbe',
-  'heftig!': 'heftig', 'glamour!': 'glamour', 'megaleuk!': 'megaleuk'
+  'heftig!': 'heftig', 'glamour!': 'glamour', 'megaleuk!': 'megaleuk', 'cool!': 'cool'
 };
 const SOUND_FILES = {};
 (Array.isArray(window.GELUIDEN) ? window.GELUIDEN : []).forEach(f => { SOUND_FILES[f.replace(/\.[^.]+$/, '').toLowerCase().trim().replace(/[\s_]+/g, '-')] = f; }); // 'Ma stobbe.m4a' telt als 'ma-stobbe'
@@ -645,6 +645,7 @@ function memeFor(e, ans, fast) {
     const f = pick([['Noncha 😎', 'noncha', 'nl-BE'], ['Clock it ⏱️', 'clock it'], ['+1000 aura ✨', null]]);
     msg = f[0]; speak = f[1]; lang = f[2];
   }
+  else if (Math.random() < .1) { msg = 'Cool! 😎'; speak = 'cool!'; lang = 'nl-BE'; }
   else if (!G.skibidi && Math.random() < .01) { msg = 'Skibidi 🚽'; speak = 'skibidi'; G.skibidi = true; } // heel zelden, max 1x per ronde
   if (!msg) return null;
   if (speak) setTimeout(() => say(speak, lang), 250);
