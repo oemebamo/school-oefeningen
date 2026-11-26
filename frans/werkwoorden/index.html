@@ -197,6 +197,21 @@ td.w{color:var(--muted);font-size:13px}
 @media (orientation:landscape) and (min-width:700px){ .cpad{grid-template-columns:1fr;max-height:420px;align-self:center;height:100%} }
 /* ---------- Franse werkwoorden ---------- */
 .qrow .pron{color:var(--muted)}
+/* Rad van vervoegingen (?rad) */
+#rad{position:absolute;inset:0;z-index:6;display:grid;place-items:center;background:rgba(30,20,80,.5)}
+#rad[hidden]{display:none}
+#rad .wrap{position:relative;height:90%;aspect-ratio:1}
+#radWheel{width:100%;height:100%;display:block;transition:transform 2.6s cubic-bezier(.12,.7,.18,1)}
+#radWheel path{stroke:#fff;stroke-width:6}
+#radWheel .win path{fill:#ffcc33}
+#radWheel .win text{fill:#2a2150}
+#radWheel text{fill:#fff;font:900 68px 'Arial Rounded MT Bold','Nunito',system-ui,sans-serif;text-anchor:middle;dominant-baseline:middle}
+#rad .ptr{position:absolute;left:50%;top:-3%;transform:translateX(-50%);width:0;height:0;z-index:2;
+  border-left:16px solid transparent;border-right:16px solid transparent;border-top:30px solid #ffcc33;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
+#rad .hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:30%;aspect-ratio:1;border-radius:50%;border:5px solid #ffcc33;
+  background:#fff;color:#5b4ab8;font:900 clamp(14px,2.2vw,26px) 'Arial Rounded MT Bold','Nunito',system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#rad .hub:active{transform:translate(-50%,-50%) scale(.95)}
+#kpad.wait{opacity:.35;pointer-events:none}
 .ans.fr{min-width:4.5em;justify-content:flex-start;padding:0 .3em;font-weight:800}
 .tip{font-size:.36em;color:var(--muted);font-weight:700;margin-top:.2em;text-align:center}
 .kpad{grid-area:pad;display:flex;flex-direction:column;gap:7px}
@@ -272,6 +287,7 @@ td.w{color:var(--muted);font-size:13px}
     <video id="vid" playsinline webkit-playsinline muted loop preload="auto"></video>
     <svg id="puz" viewBox="0 0 1600 900" preserveAspectRatio="none"></svg>
     <div id="toast"></div>
+    <div id="rad" hidden><div class="wrap"><div class="ptr"></div><svg id="radWheel" viewBox="-500 -500 1000 1000"></svg><button class="hub" id="radGo">Draai!</button></div></div>
     <div id="meme"><span class="h l"><b>6</b>🫴</span><span class="h r"><b>7</b>🫴</span></div>
   </div></div>
   <div class="kpad" id="kpad">
@@ -306,8 +322,12 @@ const TYPES = {
   er:     { icon: '🗣️', title: 'Werkwoorden op -ER', sub: 'parler, chanter, danser, … en manger, nager, commencer' },
   irre:   { icon: '🔁', title: 'Werkwoorden op -IR en -RE', sub: 'finir, choisir, attendre, répondre' },
   onregel:{ icon: '⭐', title: 'Onregelmatige werkwoorden', sub: 'être, avoir, aller, faire, prendre, venir, vouloir' },
-  alles:  { icon: '🎲', title: 'Alles door elkaar', sub: 'Alle werkwoorden van het grammaticablad' }
+  alles:  { icon: '🎲', title: 'Alles door elkaar', sub: 'Alle werkwoorden van het grammaticablad' },
+  kaartjes: { icon: '🃏', title: 'De werkwoordkaartjes', sub: 'De 16 werkwoorden op -ER van de kaartjes' }
 };
+// De werkwoorden op de kaartjes die nu geoefend worden
+const KAARTJES = ['regarder', 'habiter', 'dessiner', 'donner', 'chercher', 'parler', 'fermer', 'sauter',
+                  'demander', 'jouer', 'trouver', 'porter', 'écouter', 'travailler', 'marcher', 'aimer'];
 const LEVELS = ['kiezen', 'typen'];
 const DEFAULTS = { name: '', type: 'er', level: 0, pieces: 9, nlOnly: false, sfx: true, videoSound: false, memes: false };
 const S = Object.assign({}, DEFAULTS, store.get('fp.settings', {}));
@@ -318,7 +338,9 @@ if (!TYPES[S.type]) S.type = 'er';
 const GREET = pick(['Ewa drerrie', 'Yo bro', 'Hey gast']); // begroeting bij memes, één keer per bezoek gekozen
 const NAME = () => S.name || 'wolf'; // standaardnaam als er nog niets is ingevuld (bovenbouw = wolven)
 const saveS = () => store.set('fp.settings', S);
-const LV = () => (S.level === 1 ? 1 : 0);
+// Rad van vervoegingen: dezelfde pagina met ?rad. Je draait aan een rad met de 6 personen en typt zelf de vorm.
+const RAD = new URLSearchParams(location.search).has('rad');
+const LV = () => (RAD || S.level === 1 ? 1 : 0);
 
 function renderTypes() {
   $('#types').innerHTML = Object.entries(TYPES).map(([k, t]) =>
@@ -338,8 +360,10 @@ $('#levels').addEventListener('click', e => {
 function syncUI() {
   const T = TYPES[S.type];
   renderTypes();
-  $('#logo').textContent = T.icon; $('#title').textContent = T.title; $('#sub').textContent = T.sub;
-  document.title = T.title + ' · Frans';
+  $('#logo').textContent = RAD ? '🎡' : T.icon; $('#title').textContent = RAD ? 'Rad van vervoegingen' : T.title;
+  $('#sub').textContent = RAD ? `${T.title}: draai aan het rad en schrijf de juiste vorm` : T.sub;
+  document.title = (RAD ? 'Rad van vervoegingen' : T.title) + " · Hippo's Oefeningen";
+  $('#levels').closest('.row').hidden = RAD;
   $('#levels').innerHTML = LEVELS.map((l, i) => `<button class="${i === LV() ? 'on' : ''}" data-l="${i}">${l}</button>`).join('');
   $('#lvlHint').textContent = LV() === 0 ? 'Tik de juiste vorm aan.' : 'Schrijf de vorm zelf, accenten tellen mee.';
   $$('.seg[data-key]').forEach(seg => {
@@ -539,7 +563,7 @@ const END = {
 // [infinitief, betekenis, groep]
 const VERBS = [
   ['parler', 'praten', 'er'], ['chanter', 'zingen', 'er'], ['danser', 'dansen', 'er'], ['jouer', 'spelen', 'er'],
-  ['aimer', 'houden van', 'er'], ['habiter', 'wonen', 'er'], ['regarder', 'kijken naar', 'er'], ['écouter', 'luisteren naar', 'er'],
+  ['aimer', 'graag hebben', 'er'], ['habiter', 'wonen', 'er'], ['regarder', 'kijken naar', 'er'], ['écouter', 'luisteren naar', 'er'],
   ['marcher', 'wandelen', 'er'], ['sauter', 'springen', 'er'], ['dessiner', 'tekenen', 'er'], ['travailler', 'werken', 'er'],
   ['chercher', 'zoeken', 'er'], ['trouver', 'vinden', 'er'], ['donner', 'geven', 'er'], ['demander', 'vragen', 'er'],
   ['porter', 'dragen', 'er'], ['fermer', 'sluiten', 'er'],
@@ -579,6 +603,7 @@ function traps(inf, group, p, forms) {
   return t.filter(x => !forms.includes(x) || x !== forms[p]);
 }
 function pool() {
+  if (S.type === 'kaartjes') return VERBS.filter(v => KAARTJES.includes(v[0]));
   const g = { er: ['er'], irre: ['ir', 're'], onregel: ['x'], alles: ['er', 'ir', 're', 'x'] }[S.type];
   return VERBS.filter(v => g.includes(v[2]));
 }
@@ -591,7 +616,7 @@ function makeQuestion() {
   let pron = PERS[p];
   if (p === 0 && elide(ans)) pron = 'j’';
   if ((p === 2 || p === 5) && Math.random() < .4) pron = p === 2 ? 'elle' : 'elles';
-  const q = { key: inf + p, head: S.nlOnly ? nlw : `${inf} · ${nlw}`, nlw, label: `${pron === 'j’' ? 'j’' + ans : pron + ' ' + ans}  (${inf})`,
+  const q = { p, key: inf + p, head: S.nlOnly ? nlw : `${inf} · ${nlw}`, nlw, label: `${pron === 'j’' ? 'j’' + ans : pron + ' ' + ans}  (${inf})`,
               nums: [], verb: inf, group, rows: [] };
   if (LV() === 0) {
     // meerkeuze: juiste vorm + valkuil + andere vormen van hetzelfde werkwoord
@@ -666,7 +691,7 @@ function show(id) { $$('.screen').forEach(s => s.classList.toggle('active', s.id
 function startRound() {
   const n = S.pieces;
   G = { n, open: new Set(), streak: 0, asked: 0, ok: 0, bad: 0, fast: 0, times: [], wrongs: [], pending: [], recent: [],
-        cur: null, input: '', lock: false, t0: 0, startT: Date.now(), done: false, type: S.type, level: LV() };
+        cur: null, input: '', lock: false, t0: 0, startT: Date.now(), done: false, type: S.type, level: RAD ? 2 : LV() };
   G.pieces = buildPuzzle(n);
   $('#fbtext').textContent = `Bravo ${NAME()}!`;
   const v = pickVideo();
@@ -704,11 +729,52 @@ function nextQ() {
     G.recent.push(q.key); if (G.recent.length > 8) G.recent.shift();
   }
   G.cur = q; G.input = ''; G.asked++; G.lock = false; G.t0 = performance.now();
+  if (RAD) q.spun = false;                                   // ook een herhaalde vraag draait opnieuw
   renderQ();
 }
 
+/* ---------------- Rad ---------------- */
+const RAD_LABELS = ['je', 'tu', 'il/elle', 'nous', 'vous', 'ils/elles'];
+const RAD_COLORS = ['#6a5cff', '#3f8cff', '#8a4dff', '#2fb3c9', '#b05cff', '#4d6cff'];
+let radRot = 0;
+(function buildRad() {
+  const R = 480, pt = a => [R * Math.sin(a * Math.PI / 180), -R * Math.cos(a * Math.PI / 180)];
+  $('#radWheel').innerHTML = RAD_LABELS.map((l, i) => {
+    const [x1, y1] = pt(i * 60 - 30), [x2, y2] = pt(i * 60 + 30);
+    const fs = l.length > 6 ? ' style="font-size:52px"' : '';
+    return `<g data-i="${i}"><path d="M0 0 L${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z" fill="${RAD_COLORS[i]}"/>` +
+      `<text transform="rotate(${i * 60}) translate(0 -${R * 0.68})"${fs}>${l}</text></g>`;
+  }).join('');
+})();
+function radWin(i) { $$('#radWheel g').forEach(g => g.classList.toggle('win', +g.dataset.i === i)); }
+function spinRad() {
+  if (!G || G.done || !G.cur || G.cur.spun || G.spinning) return;
+  const q = G.cur; G.spinning = true; radWin(-1);
+  const target = -q.p * 60 + (Math.random() * 36 - 18);         // landt op persoon q.p, niet altijd net in het midden
+  radRot += 360 * 4 + (((target - radRot) % 360) + 360) % 360;
+  $('#radWheel').style.transform = `rotate(${radRot}deg)`;
+  if (S.sfx) [0, 300, 650, 1050, 1500, 2000].forEach(t => setTimeout(() => tone([1300], .03, 'square', .03), t));
+  setTimeout(() => {
+    radWin(q.p); if (S.sfx) tone([660, 990], .09, 'sine', .12);
+    setTimeout(() => {
+      if (G.cur !== q) return;
+      G.spinning = false; q.spun = true; $('#rad').hidden = true;
+      G.lock = false; G.t0 = performance.now(); renderQ();
+    }, 800);
+  }, 2650);
+}
+$('#radGo').addEventListener('click', spinRad);
+$('#radWheel').addEventListener('click', spinRad);
+
 function renderQ() {
   const q = G.cur, r = q.rows[0];
+  if (RAD && !q.spun) {
+    $('#q').innerHTML = `<div class="qhead">${esc(q.head)}</div><div class="qrow"><span class="pron">🎡 Draai aan het rad!</span></div>`;
+    $('#kpad').hidden = false; $('#cpad').hidden = true; $('#kpad').classList.add('wait');
+    G.lock = true; $('#rad').hidden = false; radWin(-1);
+    return;
+  }
+  $('#kpad').classList.remove('wait');
   $('#q').innerHTML = `<div class="qhead">${esc(q.head)}</div>` +
     `<div class="qrow"><span class="pron">${esc(r.parts[0])}</span><span id="ans" class="ans fr"></span></div>`;
   const choice = r.kind === 'choice';
@@ -903,6 +969,7 @@ $('#go').addEventListener('click', () => { tone([1], .01, 'sine', .0002); startR
 ['#kpad', '#cpad'].forEach(id => $(id).addEventListener('click', e => { const b = e.target.closest('button'); if (b) press(b.dataset.k); }));
 document.addEventListener('keydown', e => {
   if (!$('#game').classList.contains('active')) return;
+  if (RAD && G && !G.done && G.cur && !G.cur.spun) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); spinRad(); } return; }
   if (G && !G.done && G.cur && G.cur.rows[0].kind === 'choice' && /^[1-4]$/.test(e.key)) { const o = G.cur.rows[0].options[+e.key - 1]; if (o) press(o); }
   else if (e.key.length === 1 && /[a-zà-ÿ’' ]/i.test(e.key)) press(e.key === "'" ? '’' : e.key.toLowerCase());
   else if (e.key === 'Backspace') { e.preventDefault(); press('del'); }

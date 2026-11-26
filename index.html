@@ -238,11 +238,13 @@ td.who{font-weight:800}
     er: ['🗣️', 'Werkwoorden op -ER', 'parler, chanter, manger…'],
     irre: ['🔁', 'Werkwoorden op -IR en -RE', 'finir, choisir, attendre, répondre'],
     onregel: ['⭐', 'Onregelmatige werkwoorden', 'être, avoir, aller, faire…'],
-    alles: ['🎲', 'Alles door elkaar', 'Alle werkwoorden van het blad']
+    alles: ['🎲', 'Alles door elkaar', 'Alle werkwoorden van het blad'],
+    kaartjes: ['🃏', 'De werkwoordkaartjes', 'regarder, habiter, dessiner… (16)']
   };
-  const FRLV = ['kiezen', 'typen'];
+  const FRLV = ['kiezen', 'typen', 'rad'];
   document.getElementById('frMinis').innerHTML = Object.entries(FR).map(([k, t]) =>
-    `<a class="mini" href="frans/werkwoorden/index.html#${k}"><span class="ico">${t[0]}</span><b>${t[1]}</b><span class="s">${t[2]}</span></a>`).join('');
+    `<a class="mini" href="frans/werkwoorden/index.html#${k}"><span class="ico">${t[0]}</span><b>${t[1]}</b><span class="s">${t[2]}</span></a>`).join('') +
+    `<a class="mini" href="frans/werkwoorden/index.html?rad#kaartjes"><span class="ico">🎡</span><b>Rad van vervoegingen</b><span class="s">Draai aan het rad en vervoeg zelf</span></a>`;
 
   // ---- Historiek van alle spelletjes samen ----
   const LEVELS = { tot10: 'tot 10', zonder: 'tot 20 zonder brug', met: 'tot 20 met brug', alles: 'alles tot 20' };
