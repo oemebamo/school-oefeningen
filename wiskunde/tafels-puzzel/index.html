@@ -651,8 +651,7 @@ function memeFor(e, ans, fast) {
   else if (G.streak === 4) { msg = 'Slay girl! 💅'; speak = 'slay girl'; }
   else if ((ans === 6 || ans === 7) && Math.random() < .2) { msg = '6… 7! 🫴'; speak = 'six... seven'; }
   else if (G.prevBad && Math.random() < .4) {
-    const f = pick([['Good boy 🐶', 'good boy'], ['Oh my days! 😮', 'oh my days']]);
-    msg = f[0]; speak = f[1];
+    msg = 'Good boy 🐶'; speak = 'good boy';
   }
   else if (fast && Math.random() < .15) {
     const f = pick([['Noncha 😎', 'noncha', 'nl-BE'], ['Clock it ⏱️', 'clock it'], ['+1000 aura ✨', null]]);
@@ -669,7 +668,7 @@ function cringeFor() {
   // Niet bij elke fout: hooguit 1 op 3, nooit twee fouten na elkaar, en ook de memepauze telt.
   if (!S.memes || G.prevBad || !memeReady() || Math.random() > .33) return false;
   memeUsed();
-  const m = pick([['Cringe 😬', 'cringe'], ['Cooked 🍳', 'cooked'], ['Bruh 💀', 'bruh'], ['Aina! 😩', 'aina!', 'nl-BE']]);
+  const m = pick([['Cringe 😬', 'cringe'], ['Cooked 🍳', 'cooked'], ['Bruh 💀', 'bruh'], ['Aina! 😩', 'aina!', 'nl-BE'], ['Oh my days! 😮', 'oh my days']]);
   say(m[1], m[2]); return m[0];
 }
 function openPiece() {
