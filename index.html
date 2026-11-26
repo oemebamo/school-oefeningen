@@ -141,6 +141,11 @@ td.who{font-weight:800}
       <span class="last" id="lastTables" hidden></span>
     </a>
   </div>
+  <h3 class="sublevel">Andere spelletjes</h3>
+  <div class="minis">
+    <a class="mini" href="spellen/knikkerbaan/index.html"><span class="ico">🔵</span><b>Knikkerbaan</b><span class="s">Zet de wissels juist met sommen of tafels</span></a>
+    <a class="mini" href="spellen/doolhof/index.html"><span class="ico">🧭</span><b>Doolhof</b><span class="s">Elke juiste som brengt je dichter bij de uitgang</span></a>
+  </div>
   </section>
   <section id="grpWolf" hidden>
   <h2 class="level">🐺 Wolven <small>bovenbouw</small><button class="swap" data-swap>Andere groep</button></h2>
@@ -148,6 +153,11 @@ td.who{font-weight:800}
   <div class="minis" id="minis"></div>
   <h3 class="sublevel">Frans</h3>
   <div class="minis" id="frMinis"></div>
+  <h3 class="sublevel">Andere spelletjes</h3>
+  <div class="minis">
+    <a class="mini" href="spellen/knikkerbaan/index.html"><span class="ico">🔵</span><b>Knikkerbaan</b><span class="s">Zet de wissels juist met rekenen, tafels of Frans</span></a>
+    <a class="mini" href="spellen/doolhof/index.html"><span class="ico">🧭</span><b>Doolhof</b><span class="s">Elke juiste oefening brengt je dichter bij de uitgang</span></a>
+  </div>
   </section>
   <label class="opts">
     <span style="font-size:34px">😜</span>
@@ -250,14 +260,20 @@ td.who{font-weight:800}
   const LEVELS = { tot10: 'tot 10', zonder: 'tot 20 zonder brug', met: 'tot 20 met brug', alles: 'alles tot 20' };
   const OPS = { plus: '+', min: '−', beide: '+ −' };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const what = r => r.game === 'frans'
+  const SOORT = { sommen: 'sommen tot 20', tafels: 'tafels', rekenen: 'hoofdrekenen tot 100', frans: 'Frans (kaartjes)' };
+  const TEMPO = { rustig: 'rustig', snel: 'snel', supersnel: 'supersnel' };
+  const what = r => r.game === 'knikker'
+    ? `Knikkerbaan: ${SOORT[r.soort] || ''} (${TEMPO[r.tempo] || ''}) · ${r.score}/${r.total} in het bakje`
+    : r.game === 'doolhof'
+    ? `Doolhof ${r.grootte || ''}: ${SOORT[r.soort] || ''}`
+    : r.game === 'frans'
     ? (FR[r.type] ? `Frans: ${FR[r.type][1]} (${FRLV[r.level] || ''})` : 'Frans')
     : r.game === 'reken'
     ? (NP[r.type] ? `${NP[r.type][1]} (${NP[r.type][3][r.level] || ''})` : '')
     : r.game === 'tafels'
     ? ((r.tables || []).length === 10 ? 'alle tafels' : 'tafel ' + (r.tables || []).join(', '))
     : `${OPS[r.ops] || ''} ${LEVELS[r.level] || ''}`;
-  const icon = r => r.game === 'frans' ? (FR[r.type] || ['🇫🇷'])[0] : r.game === 'reken' ? (NP[r.type] || ['🧮'])[0] : r.game === 'tafels' ? '🔢' : '🧩';
+  const icon = r => r.game === 'knikker' ? '🔵' : r.game === 'doolhof' ? '🧭' : r.game === 'frans' ? (FR[r.type] || ['🇫🇷'])[0] : r.game === 'reken' ? (NP[r.type] || ['🧮'])[0] : r.game === 'tafels' ? '🔢' : '🧩';
   let filter = null, shown = 15;
   function allRounds() {   // enkel de spelletjes van de gekozen groep
     const rounds = groep === 'wolf'
@@ -265,6 +281,9 @@ td.who{font-weight:800}
          ...get('fp.history', []).map(r => Object.assign({ game: 'frans' }, r))]
       : [...get('sp.history', []).map(r => Object.assign({ game: 'sommen' }, r)),
          ...get('tp.history', []).map(r => Object.assign({ game: 'tafels' }, r))];
+    const g = groep === 'wolf' ? 'wolf' : 'pimpelmees';
+    get('kb.history', []).forEach(r => { if (r.groep === g) rounds.push(Object.assign({ game: 'knikker' }, r)); });
+    get('dh.history', []).forEach(r => { if (r.groep === g) rounds.push(Object.assign({ game: 'doolhof' }, r)); });
     return rounds.sort((a, b) => b.d - a.d);
   }
   function renderHist() {
@@ -330,7 +349,7 @@ td.who{font-weight:800}
     }
     clearTimeout(armT);
     try {
-      Object.keys(localStorage).filter(k => /^(oef|sp|tp|np|fp)\./.test(k)).forEach(k => localStorage.removeItem(k));
+      Object.keys(localStorage).filter(k => /^(oef|sp|tp|np|fp|kb|dh)\./.test(k)).forEach(k => localStorage.removeItem(k));
     } catch (e) {}
     location.reload();
   });
