@@ -85,6 +85,11 @@ button{font-family:inherit;cursor:pointer}
 
 .pad[hidden],.cpad[hidden]{display:none}
 
+.seg.multi button{min-width:52px}
+.hint{margin:8px 0 0;color:var(--muted);font-size:14px;font-weight:700}
+.hint a{color:var(--accent);cursor:pointer;text-decoration:underline}
+.row[hidden]{display:none}
+
 #veil{fill:#f3f1ff;transition:opacity .8s}
 .ground{fill:#8a6a4e}
 .ramp{stroke:#b9783f;stroke-width:16;stroke-linecap:round}
@@ -111,6 +116,7 @@ button{font-family:inherit;cursor:pointer}
     <button id="go" class="go">Start ▶</button>
     <div class="card">
       <div class="row"><b>Oefenen</b><div id="soorten"></div></div>
+      <div class="row" id="tafelRow" hidden><b>Welke tafels?</b><div><div class="seg" id="tafelSel"></div><p class="hint" id="tafelHint"></p></div></div>
       <div class="row"><b>Knikkers</b><div id="row-knikkers"></div></div><div class="row"><b>Tempo</b><div id="row-tempo"></div></div>
       <div class="row"><b>Geluid</b><label class="tog"><input type="checkbox" id="sfx"> Geluidjes bij juist en fout</label></div>
     </div>
@@ -169,11 +175,15 @@ const SOORTEN = GROEP === 'wolf' ? {
   frans:   ['🇫🇷', 'Frans', 'de 16 werkwoordkaartjes']
 } : {
   sommen: ['➕', 'Sommen tot 20', 'plus en min'],
-  tafels: ['✖️', 'Tafels', 'de tafels van de Tafelpuzzel']
+  tafels: ['✖️', 'Tafels', 'kies hieronder welke']
 };
 
 const S = Object.assign({ soort: Object.keys(SOORTEN)[0], sfx: true }, GAME.defaults, store.get(GAME.key + '.settings', {}));
 if (!SOORTEN[S.soort]) S.soort = Object.keys(SOORTEN)[0];
+if (!Array.isArray(S.tafels) || !S.tafels.length) {
+  const tp = (store.get('tp.settings', {}).tables || []).filter(n => n >= 1 && n <= 10);
+  S.tafels = GROEP === 'pimpelmees' && tp.length ? tp : GROEP === 'wolf' ? [2, 3, 4, 5, 6, 7, 8, 9, 10] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+}
 const saveS = () => store.set(GAME.key + '.settings', S);
 
 /* ---------- Startscherm ---------- */
@@ -184,10 +194,26 @@ function segHTML(key, opts) {
 function renderStart() {
   $('#soorten').innerHTML = segHTML('soort', Object.entries(SOORTEN).map(([k, t]) => [k, `${t[0]} ${t[1]}`, t[2]]));
   GAME.rows.forEach(r => { $('#row-' + r.key).innerHTML = segHTML(r.key, r.opts); });
+  $('#tafelRow').hidden = S.soort !== 'tafels';
+  $('#tafelSel').classList.add('multi');
+  $('#tafelSel').innerHTML = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<button data-t="${n}" class="${S.tafels.includes(n) ? 'on' : ''}">${n}</button>`).join('');
+  $('#tafelHint').innerHTML = S.tafels.length === 10 ? 'Alle tafels. <a data-t="none">Alles uit</a>' : `Tafel ${S.tafels.join(', ')}. <a data-t="all">Alle tafels</a>`;
   $('#sfx').checked = S.sfx;
   $('#hello').textContent = `Hoi ${NAME}! ${GAME.hello}`;
 }
 document.addEventListener('click', e => {
+  const t = e.target.closest('[data-t]');
+  if (t && t.closest('#tafelRow')) {
+    const v = t.dataset.t;
+    if (v === 'all') S.tafels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    else if (v === 'none') S.tafels = [GROEP === 'wolf' ? 2 : 1];
+    else {
+      const n = +v;
+      S.tafels = S.tafels.includes(n) ? S.tafels.filter(x => x !== n) : [...S.tafels, n].sort((a, b) => a - b);
+      if (!S.tafels.length) S.tafels = [n];          // minstens één tafel
+    }
+    saveS(); renderStart(); return;
+  }
   const b = e.target.closest('.seg button'); if (!b) return;
   const k = b.closest('.seg').dataset.key, v = b.dataset.val;
   S[k] = /^\d+$/.test(v) ? +v : v; saveS(); renderStart();
@@ -195,7 +221,6 @@ document.addEventListener('click', e => {
 $('#sfx').addEventListener('change', e => { S.sfx = e.target.checked; saveS(); });
 
 /* ---------- Oefeningen ---------- */
-const TAFELS = (store.get('tp.settings', {}).tables || []).filter(n => n >= 1 && n <= 10);
 const KAARTJES = [['regarder', 'kijken naar'], ['habiter', 'wonen'], ['dessiner', 'tekenen'], ['donner', 'geven'], ['chercher', 'zoeken'],
   ['parler', 'praten'], ['fermer', 'sluiten'], ['sauter', 'springen'], ['demander', 'vragen'], ['jouer', 'spelen'], ['trouver', 'vinden'],
   ['porter', 'dragen'], ['écouter', 'luisteren naar'], ['travailler', 'werken'], ['marcher', 'wandelen'], ['aimer', 'graag hebben']];
@@ -219,7 +244,7 @@ function makeQ1() {
     const a = rnd(31, 99), b = rnd(4, Math.min(48, a - 10)); return num(`${a} − ${b}`, a - b);
   }
   if (s === 'tafels') {
-    const t = GROEP === 'wolf' ? rnd(2, 10) : pick(TAFELS.length ? TAFELS : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), k = rnd(1, 10);
+    const t = pick(S.tafels), k = rnd(1, 10);
     if (GROEP === 'wolf' && Math.random() < .35) return num(`${t * k} : ${t}`, k);
     return num(`${k} × ${t}`, k * t);
   }
