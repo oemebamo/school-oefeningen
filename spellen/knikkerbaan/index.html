@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Hippo's Oefeningen">
+<meta name="theme-color" content="#6a5cff">
+<title>Knikkerbaan · Hippo's Oefeningen</title>
+<meta name="description" content="Rekenen, tafels en Frans voor pimpelmezen en wolven">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="icon" href="../../icons/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../../icons/apple-touch-icon.png">
+<link rel="manifest" href="../../manifest.webmanifest">
+<meta property="og:title" content="Knikkerbaan · Hippo's Oefeningen">
+<meta property="og:image" content="https://oemebamo.github.io/school-oefeningen/icons/og-image.jpg">
+<style>
+:root{--bg:#f3f1ff;--ink:#2a2150;--muted:#7a74a6;--accent:#6a5cff;--accent2:#4d7cff;--ok:#1fae7a;--bad:#ff5d6c;--card:#fff;--line:#e6e2fb}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;overflow-x:hidden;background:var(--bg);color:var(--ink);
+  font-family:'Nunito','Arial Rounded MT Bold',ui-rounded,system-ui,-apple-system,sans-serif}
+button{font-family:inherit;cursor:pointer}
+.screen{display:none}.screen.active{display:block}
+/* ---- start ---- */
+.wrapS{max-width:760px;margin:0 auto;padding:18px 18px 40px}
+.homelink{display:inline-block;color:var(--accent);font-weight:800;text-decoration:none;margin-bottom:10px}
+.hero{display:flex;gap:16px;align-items:center;margin-bottom:16px}
+.hero .logo{font-size:56px;width:84px;height:84px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent2),#8a4dff);border-radius:24px;box-shadow:0 8px 22px rgba(106,92,255,.3)}
+.hero h1{margin:0;font-size:32px}.hero p{margin:4px 0 0;color:var(--muted);font-weight:700}
+.go{display:block;width:100%;padding:20px;border:0;border-radius:22px;background:linear-gradient(135deg,var(--accent2),#8a4dff);color:#fff;
+  font-size:28px;font-weight:900;box-shadow:0 6px 0 #4b2fd6;margin:6px 0 18px}
+.go:active{transform:translateY(3px);box-shadow:0 3px 0 #4b2fd6}
+.card{background:var(--card);border-radius:22px;padding:6px 18px;box-shadow:0 4px 18px rgba(60,40,160,.08)}
+.row{display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}.row>b{color:var(--muted)}
+@media (max-width:560px){.row{grid-template-columns:1fr}}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{border:0;border-radius:14px;padding:10px 14px;background:#ece8fb;color:var(--ink);font-weight:800;font-size:16px}
+.seg button.on{background:var(--accent);color:#fff;box-shadow:0 3px 0 #4b2fd6}
+.seg button small{display:block;font-weight:700;opacity:.75;font-size:12px}
+.tog{display:flex;gap:10px;align-items:center;font-weight:700}.tog input{width:22px;height:22px;accent-color:var(--accent)}
+/* ---- game ---- */
+#game.active{display:grid;height:100vh;height:100dvh;padding:10px 14px calc(12px + env(safe-area-inset-bottom));gap:10px;
+  grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;grid-template-areas:"top" "q" "board" "pad";overflow:hidden}
+@media (orientation:landscape) and (min-width:700px){
+  #game.active{grid-template-columns:minmax(0,1fr) clamp(230px,27vw,330px);grid-template-rows:auto auto minmax(0,1fr);grid-template-areas:"top top" "q q" "board pad"}}
+.top{grid-area:top;display:flex;align-items:center;gap:12px}
+.chip{border:0;background:#fff;border-radius:14px;width:46px;height:46px;font-size:20px;font-weight:900;box-shadow:0 3px 10px rgba(60,40,160,.12);color:var(--ink)}
+.prog{flex:1;display:flex;align-items:center;gap:12px;font-weight:900;font-size:20px;justify-content:flex-end}
+.prog .bar{flex:1;height:14px;border-radius:9px;background:#dfe6fa;overflow:hidden}
+.prog .bar div{height:100%;width:0;background:linear-gradient(90deg,var(--accent2),#8a4dff);border-radius:9px;transition:width .4s}
+.prog .ok{color:var(--ok)}.prog .bad{color:var(--bad)}
+.q{grid-area:q;text-align:center;font-weight:900;font-size:clamp(30px,6vw,60px);line-height:1.15;min-height:1.3em;transition:opacity .2s}
+.q.wait{opacity:.55}
+.qhead{font-size:.42em;color:var(--muted);font-weight:800}
+.qrow{display:flex;justify-content:center;align-items:center;gap:.3em;flex-wrap:wrap}
+.pron{color:var(--muted)}
+.ans{display:inline-block;min-width:1.7em;padding:0 .12em;border-bottom:5px solid var(--accent);color:var(--accent);text-align:center}
+.ans.ok{color:var(--ok);border-color:var(--ok)}.ans.bad{color:var(--bad);border-color:var(--bad)}.ans.fix{color:var(--ok);border-color:var(--ok)}
+.caret{display:inline-block;width:3px;height:.9em;background:var(--accent);vertical-align:-.1em;animation:bl 1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+.shake{animation:sh .4s}@keyframes sh{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+.board{grid-area:board;container-type:size;min-height:0;min-width:0;display:grid;place-items:center}
+.stage{position:relative;width:min(100cqw,calc(100cqh * 16 / 9));aspect-ratio:16/9;border-radius:20px;overflow:hidden;background:#1d1747;box-shadow:0 10px 30px rgba(40,20,120,.25)}
+.stage>svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.pad{grid-area:pad;display:grid;gap:10px;grid-template-columns:repeat(6,1fr);grid-template-areas:"k1 k2 k3 k4 k5 kd" "k6 k7 k8 k9 k0 ko"}
+.pad button,.cpad button{border:0;border-radius:16px;background:#fff;color:var(--ink);font-weight:900;font-size:clamp(22px,3.2vw,32px);min-height:56px;box-shadow:0 4px 0 #d6cffa}
+.pad button:active,.cpad button:active{transform:translateY(2px);box-shadow:0 2px 0 #d6cffa}
+.pad .ko{background:var(--accent);color:#fff;box-shadow:0 4px 0 #4b2fd6}
+@media (orientation:landscape) and (min-width:700px){
+  .pad{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);grid-template-areas:"k1 k2 k3" "k4 k5 k6" "k7 k8 k9" "kd k0 ko";max-height:560px;align-self:center;height:100%}}
+.cpad{grid-area:pad;display:grid;gap:12px;grid-template-columns:1fr 1fr;grid-auto-rows:minmax(64px,1fr)}
+@media (orientation:landscape) and (min-width:700px){.cpad{grid-template-columns:1fr;max-height:440px;align-self:center;height:100%}}
+.pad.off,.cpad.off{opacity:.35;pointer-events:none}
+#toast{position:absolute;left:50%;top:6%;transform:translate(-50%,-20px);opacity:0;padding:10px 20px;border-radius:16px;background:#fff;color:var(--ink);
+  font-weight:900;font-size:clamp(16px,2.4vw,26px);box-shadow:0 6px 20px rgba(0,0,0,.25);transition:.25s;pointer-events:none;white-space:nowrap;z-index:5}
+#toast.show{opacity:1;transform:translate(-50%,0)}#toast.ok{color:var(--ok)}#toast.bad{color:var(--bad)}
+.endp{position:fixed;inset:0;display:grid;place-items:center;background:rgba(30,20,80,.45);z-index:20;padding:20px}
+.endp[hidden]{display:none}
+.endp .box{background:#fff;border-radius:26px;padding:24px 26px;max-width:440px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.endp h2{margin:0 0 6px;font-size:30px}.endp p{margin:6px 0;color:var(--muted);font-weight:700;font-size:18px}
+.endp .big{font-size:52px}.endp .btns{display:flex;gap:10px;margin-top:16px}
+.endp .btns button{flex:1;border:0;border-radius:16px;padding:14px;font-size:20px;font-weight:900;background:#ece8fb;color:var(--ink)}
+.endp .btns .again{background:var(--accent);color:#fff;box-shadow:0 4px 0 #4b2fd6}
+
+.pad[hidden],.cpad[hidden]{display:none}
+
+.seg.multi button{min-width:52px}
+.hint{margin:8px 0 0;color:var(--muted);font-size:14px;font-weight:700}
+.hint a{color:var(--accent);cursor:pointer;text-decoration:underline}
+.row[hidden]{display:none}
+
+#veil{fill:#f3f1ff;transition:opacity .8s}
+.ground{fill:#8a6a4e}
+.ramp{stroke:#b9783f;stroke-width:16;stroke-linecap:round}
+.post{stroke:#7a5233;stroke-width:8;stroke-linecap:round;opacity:.7}
+.funnel{fill:#c98a4b;stroke:#7a5233;stroke-width:5}
+.tray{fill:rgba(255,255,255,.35);stroke:#6a5cff;stroke-width:12;stroke-linejoin:round;stroke-linecap:round}
+.wissel path{fill:none;stroke:#ff5d6c;stroke-width:15;stroke-linecap:round}
+.wissel.closed path{stroke:#1fae7a}
+.wissel .pivot{fill:#2a2150}
+.wissel{transition:transform .35s cubic-bezier(.3,1.5,.6,1)}
+.stripe{fill:none;stroke:rgba(255,255,255,.55);stroke-width:5}
+.lost{opacity:.65}
+
+</style>
+</head>
+<body>
+<section id="start" class="screen active">
+  <div class="wrapS">
+    <a class="homelink" href="../../index.html">← Alle spelletjes</a>
+    <header class="hero">
+      <div class="logo">🔵</div>
+      <div><h1>Knikkerbaan</h1><p>Los de oefening op en zet de wissel juist, anders valt de knikker!</p><p id="hello"></p></div>
+    </header>
+    <button id="go" class="go">Start ▶</button>
+    <div class="card">
+      <div class="row"><b>Oefenen</b><div><div id="soorten"></div><p class="hint">Wat er precies in zit, stel je in bij <a href="../../niveau/index.html">Wat kan ik al?</a></p></div></div>
+      <div class="row"><b>Knikkers</b><div id="row-knikkers"></div></div><div class="row"><b>Tempo</b><div id="row-tempo"></div></div>
+      <div class="row"><b>Geluid</b><label class="tog"><input type="checkbox" id="sfx"> Geluidjes bij juist en fout</label></div>
+    </div>
+  </div>
+</section>
+<section id="game" class="screen">
+  <header class="top">
+    <button id="stop" class="chip" aria-label="Stoppen">✕</button>
+    <div class="prog"><div class="bar"><div id="fill"></div></div><span id="plabel"></span><span class="ok">✓ <b id="nok">0</b></span><span class="bad">✗ <b id="nbad">0</b></span></div>
+  </header>
+  <div id="q" class="q"></div>
+  <div class="board"><div class="stage" id="stage">
+    <svg id="svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet"></svg>
+    <div id="toast"></div>
+  </div></div>
+  <div class="pad" id="pad"></div>
+  <div class="cpad" id="cpad" hidden></div>
+  <div class="endp" id="endp" hidden></div>
+</section>
+<script src="../../niveau.js"></script>
+<script src="../../geluiden/geluiden.js"></script>
+<script>
+const GAME = {
+  key: 'kb',
+  hello: 'Zet de wissels juist!',
+  defaults: { knikkers: 5, tempo: store0('oef.groep') === 'wolf' ? 'snel' : 'rustig' },
+  rows: [
+    { key: 'knikkers', label: 'Knikkers', opts: [[3, '3 knikkers'], [5, '5 knikkers'], [7, '7 knikkers']] },
+    { key: 'tempo', label: 'Tempo', opts: [['rustig', '🐢 Rustig', 'knikker wacht op jou'], ['snel', '🐇 Snel', '12 seconden'], ['supersnel', '🚀 Supersnel', '7 seconden']] }
+  ]
+};
+function store0(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+
+'use strict';
+/* ===== Gedeeld door Knikkerbaan en Doolhof: instellingen, oefeningen, invoer, geluid ===== */
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+
+// Groep, naam en memes komen van de homepage
+const GROEP = store.get('oef.groep', null) === 'wolf' ? 'wolf' : 'pimpelmees';
+const BASE = store.get(GROEP === 'wolf' ? 'np.settings' : 'sp.settings', {});
+const NAME = BASE.name || GROEP;
+const MEMES = BASE.memes === true;
+const HERO = GROEP === 'wolf' ? '🐺' : '🐦';
+const NV = NIVEAU.load(GROEP);        // wat het kind al kan: van de pagina "Wat kan ik al?"
+const tafelTxt = () => NV.tafels.length === 10 ? 'alle tafels' : 'tafel ' + NV.tafels.join(', ');
+
+const SOORTEN = GROEP === 'wolf' ? {
+  rekenen: ['🧮', 'Hoofdrekenen', NV.reken.brug.lv === 1 ? '+ en − tot 1000' : '+ en − tot 100'],
+  tafels:  ['✖️', 'Tafels', tafelTxt() + (NV.delen ? ', ook gedeeld door' : '')],
+  frans:   ['🇫🇷', 'Frans', NV.frans.verbs.length + ' werkwoorden']
+} : {
+  sommen: ['➕', 'Sommen', `${NIVEAU.OPS[NV.sommen.ops]}, ${NIVEAU.SOMMEN_LEVELS[NV.sommen.level]}`],
+  tafels: ['✖️', 'Tafels', tafelTxt()]
+};
+
+const S = Object.assign({ soort: Object.keys(SOORTEN)[0], sfx: true }, GAME.defaults, store.get(GAME.key + '.settings', {}));
+if (!SOORTEN[S.soort]) S.soort = Object.keys(SOORTEN)[0];
+const saveS = () => store.set(GAME.key + '.settings', S);
+
+/* ---------- Startscherm ---------- */
+function segHTML(key, opts) {
+  return `<div class="seg" data-key="${key}">` + opts.map(([v, l, s]) =>
+    `<button data-val="${v}" class="${String(S[key]) === String(v) ? 'on' : ''}">${l}${s ? `<small>${s}</small>` : ''}</button>`).join('') + '</div>';
+}
+function renderStart() {
+  $('#soorten').innerHTML = segHTML('soort', Object.entries(SOORTEN).map(([k, t]) => [k, `${t[0]} ${t[1]}`, t[2]]));
+  GAME.rows.forEach(r => { $('#row-' + r.key).innerHTML = segHTML(r.key, r.opts); });
+  $('#sfx').checked = S.sfx;
+  $('#hello').textContent = `Hoi ${NAME}! ${GAME.hello}`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.seg button'); if (!b) return;
+  const k = b.closest('.seg').dataset.key, v = b.dataset.val;
+  S[k] = /^\d+$/.test(v) ? +v : v; saveS(); renderStart();
+});
+$('#sfx').addEventListener('change', e => { S.sfx = e.target.checked; saveS(); });
+
+/* ---------- Oefeningen ---------- */
+const KAARTJES = [['regarder', 'kijken naar'], ['habiter', 'wonen'], ['dessiner', 'tekenen'], ['donner', 'geven'], ['chercher', 'zoeken'],
+  ['parler', 'praten'], ['fermer', 'sluiten'], ['sauter', 'springen'], ['demander', 'vragen'], ['jouer', 'spelen'], ['trouver', 'vinden'],
+  ['porter', 'dragen'], ['écouter', 'luisteren naar'], ['travailler', 'werken'], ['marcher', 'wandelen'], ['aimer', 'graag hebben']];
+const num = (text, ans) => ({ kind: 'num', text, ans: String(ans) });
+let lastKey = '';
+function makeQ() {
+  for (let t = 0; t < 20; t++) { const q = makeQ1(); if (q.text + q.head !== lastKey) { lastKey = q.text + q.head; return q; } }
+  return makeQ1();
+}
+const crosses = (a, op, b) => op === '+' ? Math.floor(a / 10) !== Math.floor((a + b) / 10) && (a + b) % 10 !== 0
+                                         : Math.floor(a / 10) !== Math.floor((a - b) / 10) && a % 10 !== 0;
+function makeQ1() {
+  const s = S.soort;
+  if (s === 'sommen') {
+    const { level, ops, missing } = NV.sommen, max = level === 'tot10' ? 10 : 20;
+    let a, b, op;
+    for (let t = 0; t < 200; t++) {
+      op = ops === 'plus' ? '+' : ops === 'min' ? '−' : pick(['+', '−']);
+      if (op === '+') { a = rnd(1, max - 1); b = rnd(1, max - a); } else { a = rnd(2, max); b = rnd(1, a - 1); }
+      const x = crosses(a, op, b);
+      if (level === 'zonder' && x) continue;
+      if (level === 'met' && !x) continue;
+      break;
+    }
+    const c = op === '+' ? a + b : a - b;
+    if (missing && Math.random() < .35) return Math.random() < .5 ? { kind: 'num', text: `${a} ${op} ? = ${c}`, ans: String(b), gap: true }
+                                                                  : { kind: 'num', text: `? ${op} ${b} = ${c}`, ans: String(a), gap: true };
+    return num(`${a} ${op} ${b}`, c);
+  }
+  if (s === 'rekenen') {
+    const big = NV.reken.brug.lv === 1;
+    if (Math.random() < .5) {
+      const a = big ? rnd(120, 880) : rnd(12, 78), b = big ? rnd(12, Math.min(99, 999 - a)) : rnd(3, Math.min(48, 99 - a));
+      return num(`${a} + ${b}`, a + b);
+    }
+    const a = big ? rnd(130, 999) : rnd(31, 99), b = big ? rnd(12, 99) : rnd(4, Math.min(48, a - 10));
+    return num(`${a} − ${b}`, a - b);
+  }
+  if (s === 'tafels') {
+    const t = pick(NV.tafels), k = rnd(1, 10);
+    if (GROEP === 'wolf' && NV.delen && Math.random() < .35) return num(`${t * k} : ${t}`, k);
+    if (GROEP === 'pimpelmees' && NV.tafelMissing && Math.random() < .35) return { kind: 'num', text: `${k} × ? = ${k * t}`, ans: String(t), gap: true };
+    return num(`${k} × ${t}`, k * t);
+  }
+  // Frans: de werkwoorden van het niveau, kiezen uit 4
+  const verbs = FR.VERBS.filter(v => NV.frans.verbs.includes(v[0]));
+  const [v, nl, g] = pick(verbs), p = rnd(0, 5), forms = FR.conj(v, g), ans = forms[p];
+  const pron = [FR.elide(ans) ? 'j’' : 'je', 'tu', pick(['il', 'elle']), 'nous', 'vous', pick(['ils', 'elles'])][p];
+  const opts = new Set([ans]);
+  if (NV.frans.nlOnly) {   // enkel Nederlands: ook dezelfde persoon van andere werkwoorden, zodat je echt moet vertalen
+    shuffle(verbs.filter(x => x[0] !== v)).forEach(([oi, , og]) => {
+      const f = FR.conj(oi, og)[p];
+      if (opts.size < 3 && (p !== 0 || FR.elide(f) === FR.elide(ans))) opts.add(f);
+    });
+  }
+  shuffle(forms.slice()).forEach(f => { if (opts.size < 4) opts.add(f); });
+  return { kind: 'choice', head: NV.frans.nlOnly ? nl : `${v} · ${nl}`, text: pron, ans, options: shuffle([...opts]) };
+}
+
+/* ---------- Vraag stellen en antwoord lezen ---------- */
+let Q = null;
+const TIMES = [];   // denktijd van de juiste antwoorden in deze ronde
+function ask(q) {
+  return new Promise(resolve => {
+    Q = { q, input: '', resolve, t0: performance.now(), locked: false };
+    renderQ();
+  });
+}
+function renderQ() {
+  const q = Q.q, box = '<span id="ans" class="ans"></span>';
+  $('#q').classList.remove('wait');
+  $('#q').innerHTML = q.kind === 'choice'
+    ? `<div class="qhead">${esc(q.head)}</div><div class="qrow"><span class="pron">${esc(q.text)}</span>${box}</div>`
+    : q.gap ? `<div class="qrow">${q.text.split('?').map(esc).join(box)}</div>`
+    : `<div class="qrow"><span>${esc(q.text)} =</span>${box}</div>`;
+  const ch = q.kind === 'choice';
+  $('#pad').hidden = ch; $('#cpad').hidden = !ch;
+  $('#pad').classList.remove('off'); $('#cpad').classList.remove('off');
+  if (ch) $('#cpad').innerHTML = q.options.map(o => `<button data-k="${esc(o)}">${esc(o)}</button>`).join('');
+  updAns();
+}
+function updAns() { const a = $('#ans'); if (a) a.innerHTML = Q && Q.input ? esc(Q.input) : '<i class="caret"></i>'; }
+function idle(msg) {
+  Q = null;
+  $('#q').classList.add('wait');
+  $('#q').innerHTML = `<div class="qrow"><span>${esc(msg)}</span></div>`;
+  $('#pad').classList.add('off'); $('#cpad').classList.add('off');
+}
+function press(k) {
+  if (!Q || Q.locked) return;
+  if (Q.q.kind === 'choice') { if (Q.q.options.includes(k)) { Q.input = k; updAns(); submit(); } return; }
+  if (k === 'del') Q.input = Q.input.slice(0, -1);
+  else if (k === 'ok') { if (Q.input !== '') submit(); return; }
+  else if (/^\d$/.test(k)) { if (Q.input.length < 3) Q.input += k; }
+  updAns();
+}
+function submit(timeout) {
+  const q = Q.q, box = $('#ans'), ok = !timeout && Q.input === q.ans, dt = (performance.now() - Q.t0) / 1000, res = Q.resolve;
+  Q.locked = true;
+  $('#pad').classList.add('off'); $('#cpad').classList.add('off');
+  if (ok) { box.classList.add('ok'); TIMES.push(dt); }
+  else {
+    box.classList.add('bad');
+    const qe = $('#q'); qe.classList.remove('shake'); void qe.offsetWidth; qe.classList.add('shake');
+    setTimeout(() => { box.classList.remove('bad'); box.classList.add('fix'); box.textContent = q.ans; }, 350);
+  }
+  res({ ok, dt, timeout: !!timeout, q });
+}
+function timeoutQ() { if (Q && !Q.locked) submit(true); }
+$('#pad').addEventListener('click', e => { const b = e.target.closest('button'); if (b) press(b.dataset.k); });
+$('#cpad').addEventListener('click', e => { const b = e.target.closest('button'); if (b) press(b.dataset.k); });
+document.addEventListener('keydown', e => {
+  if (!$('#game').classList.contains('active')) return;
+  if (!$('#endp').hidden) { if (e.key === 'Enter') { e.preventDefault(); startRound(); } return; }
+  if (Q && Q.q.kind === 'choice' && /^[1-4]$/.test(e.key)) { const o = Q.q.options[+e.key - 1]; if (o) press(o); return; }
+  if (/^\d$/.test(e.key)) press(e.key);
+  else if (e.key === 'Backspace') { e.preventDefault(); press('del'); }
+  else if (e.key === 'Enter') { e.preventDefault(); press('ok'); }
+});
+const PAD = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(n => `<button data-k="${n}" style="grid-area:k${n}">${n}</button>`).join('') +
+  '<button data-k="del" style="grid-area:kd" aria-label="Wissen">⌫</button><button data-k="ok" class="ko" style="grid-area:ko">OK</button>';
+$('#pad').innerHTML = PAD;
+
+/* ---------- Geluid ---------- */
+let actx = null;
+function tone(freqs, dur, type, vol, gap) {
+  if (!S.sfx) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    const t = actx.currentTime;
+    freqs.forEach((fq, i) => {
+      const o = actx.createOscillator(), g = actx.createGain(), st = t + i * (gap || dur);
+      o.type = type; o.frequency.value = fq;
+      g.gain.setValueAtTime(0.0001, st); g.gain.exponentialRampToValueAtTime(vol, st + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, st + dur);
+      o.connect(g); g.connect(actx.destination); o.start(st); o.stop(st + dur + .02);
+    });
+  } catch (e) {}
+}
+function sfx(k) {
+  if (k === 'ok') tone([660, 990], .11, 'sine', .18);
+  if (k === 'bad') tone([240, 180], .16, 'triangle', .16);
+  if (k === 'win') tone([523, 659, 784, 1047, 1319], .13, 'sine', .2);
+  if (k === 'click') tone([1400], .04, 'square', .04);
+  if (k === 'plof') tone([180, 110], .12, 'sine', .3);
+  if (k === 'step') tone([880], .05, 'sine', .05);
+}
+// Eigen opnames (geluiden/) alleen als de irritante memes aan staan
+const SOUND_FILES = {};
+(Array.isArray(window.GELUIDEN) ? window.GELUIDEN : []).forEach(f => { SOUND_FILES[f.replace(/\.[^.]+$/, '').toLowerCase().trim().replace(/[\s_]+/g, '-')] = f; });
+function say(text, lang) {
+  if (!S.sfx || !MEMES) return;
+  const f = SOUND_FILES[text.toLowerCase().replace(/[!?.]/g, '').trim().replace(/\s+/g, '-')];
+  if (f) { try { new Audio('../../geluiden/' + encodeURIComponent(f)).play().catch(() => {}); } catch (e) {} return; }
+  try { const u = new SpeechSynthesisUtterance(text); u.lang = lang || 'en-US'; u.rate = 1.05; u.pitch = 1.2; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) {}
+}
+let toastT = null;
+function toast(msg, kind) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'show ' + (kind || '');
+  clearTimeout(toastT); toastT = setTimeout(() => { t.className = kind || ''; }, 1500);
+}
+const PRAISE = ['Goed zo!', 'Juist!', 'Top!', 'Knap!', 'Super!', 'Yes!'];
+function endWord(perfect) {
+  const w = perfect ? pick([['Heftig', '🔥'], ['Glamour', '✨'], ['Megaleuk', '🤩']]) : ['Slay', '💅'];
+  if (MEMES) setTimeout(() => say(w[0] + '!', perfect ? 'nl-BE' : 'en-US'), 500);
+  return MEMES ? `${w[0]} ${NAME}! ${w[1]}` : `Bravo ${NAME}!`;
+}
+
+/* ---------- Afbeelding (achter het spel, als beloning) ---------- */
+const PIC_DIR = GROEP === 'wolf' ? '../../afbeeldingen-wolven/' : '../../wiskunde/afbeeldingen/';
+let PICS = [];
+(function () {
+  const sc = document.createElement('script');
+  sc.src = PIC_DIR + 'afbeeldingen.js';
+  sc.onload = () => { PICS = Array.isArray(window.AFBEELDINGEN) ? window.AFBEELDINGEN : []; };
+  document.head.appendChild(sc);
+})();
+function pickPic() {
+  if (!PICS.length) return '';
+  const last = store.get(GAME.key + '.lastpic', ''), opts = PICS.filter(p => p !== last);
+  const p = pick(opts.length ? opts : PICS); store.set(GAME.key + '.lastpic', p);
+  return PIC_DIR + encodeURIComponent(p);
+}
+
+/* ---------- Schermen ---------- */
+function show(id) { if (id === 'game') TIMES.length = 0; $$('.screen').forEach(s => s.classList.toggle('active', s.id === id)); }
+function saveHist(rec) {
+  const h = store.get(GAME.key + '.history', []);
+  const avg = TIMES.length ? TIMES.reduce((a, b) => a + b, 0) / TIMES.length : 0;
+  h.unshift(Object.assign({ d: Date.now(), name: BASE.name || '', groep: GROEP, soort: S.soort, n: (rec.ok || 0) + (rec.bad || 0), avg }, rec));
+  store.set(GAME.key + '.history', h.slice(0, 200));
+}
+function endScreen(html) {
+  $('#endp').innerHTML = `<div class="box">${html}<div class="btns"><button class="stopb">Stoppen</button><button class="again">Nog eens ▶</button></div></div>`;
+  $('#endp').hidden = false;
+}
+$('#endp').addEventListener('click', e => {
+  if (e.target.closest('.again')) startRound();
+  else if (e.target.closest('.stopb')) stopGame();
+});
+let RUN = 0;   // verhoogt bij elke nieuwe ronde of stop, zodat oude animaties stoppen
+function stopGame() { RUN++; Q = null; $('#endp').hidden = true; renderStart(); show('start'); }
+$('#stop').addEventListener('click', stopGame);
+$('#go').addEventListener('click', () => startRound());
+renderStart();
+
+/* ===================== Knikkerbaan ===================== */
+const R = 26;                                   // straal knikker
+const GROUND = 880;
+// Bovenkant van de 4 hellingen; na helling 0, 1 en 2 staat een wissel
+const RAMPS = [
+  { x1: 230, y1: 150, x2: 1340, y2: 240 },
+  { x1: 1340, y1: 350, x2: 260, y2: 440 },
+  { x1: 260, y1: 550, x2: 1340, y2: 640 },
+  { x1: 1340, y1: 750, x2: 780, y2: 790 }
+];
+const TRAY = { x: 470, y: 796, w: 280, h: 88 };
+const atop = (x, y) => [x, y - R];               // middelpunt van de knikker op een helling
+const TURN_R = 55;
+const turns = [0, 1, 2].map(i => {
+  const a = RAMPS[i], b = RAMPS[i + 1], s = a.x2 > a.x1 ? 1 : -1;
+  return { s, cx: a.x2, cy: (a.y2 + b.y1) / 2 - R };
+});
+const MCOL = ['#ff5d6c', '#ffcc33', '#22b07d', '#4d7cff', '#b05cff', '#ff8a3d', '#2fb3c9'];
+
+function buildBoard(pic) {
+  const ramps = RAMPS.map((r, i) => {
+    return `<line x1="${r.x1}" y1="${r.y1 + 7}" x2="${r.x2}" y2="${r.y2 + 7}" class="ramp"/>`;
+  }).join('');
+  const sw = turns.map((t, i) => {
+    const rr = TURN_R + R + 8, sweep = t.s > 0 ? 1 : 0;
+    return `<g class="wissel" id="w${i}" style="transform-origin:${t.cx}px ${t.cy - rr}px">
+      <path d="M${t.cx} ${t.cy - rr} A${rr} ${rr} 0 0 ${sweep} ${t.cx} ${t.cy + rr}"/>
+      <circle cx="${t.cx}" cy="${t.cy - rr}" r="12" class="pivot"/></g>`;
+  }).join('');
+  $('#svg').innerHTML = `
+    <defs><radialGradient id="mg" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+    ${pic ? `<image href="${pic}" x="0" y="0" width="1600" height="900" preserveAspectRatio="xMidYMid slice"/>` : ''}
+    <rect id="veil" x="0" y="0" width="1600" height="900"/>
+    <rect x="0" y="${GROUND}" width="1600" height="${900 - GROUND}" class="ground"/>
+    <path d="M150 40 L310 40 L262 120 L198 120 Z" class="funnel"/>
+    ${ramps}${sw}
+    <path d="M${TRAY.x} ${TRAY.y} L${TRAY.x + 14} ${TRAY.y + TRAY.h} L${TRAY.x + TRAY.w - 14} ${TRAY.y + TRAY.h} L${TRAY.x + TRAY.w} ${TRAY.y}" class="tray"/>
+    <g id="marbles"></g>`;
+  setVeil();
+}
+function setVeil() {
+  const v = $('#veil'); if (!v) return;
+  v.style.opacity = G ? (0.86 * (1 - G.inTray / G.total)).toFixed(2) : .86;
+}
+function setSwitch(i, closed) {
+  const t = turns[i], g = $('#w' + i);
+  g.style.transform = closed ? 'rotate(0deg)' : `rotate(${-t.s * 72}deg)`;
+  g.classList.toggle('closed', closed);
+}
+
+/* ---- knikker bewegen ---- */
+function newMarble() {
+  const col = pick(MCOL);
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.innerHTML = `<g class="spin"><circle r="${R}" fill="${col}"/><path d="M${-R + 5} 0 A${R - 5} ${R - 5} 0 0 1 ${R - 5} 0" class="stripe"/></g><circle r="${R}" fill="url(#mg)"/>`;
+  $('#marbles').appendChild(g);
+  return { g, spin: g.querySelector('.spin'), x: 0, y: 0, rot: 0 };
+}
+function place(m, x, y) { m.x = x; m.y = y; m.g.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`); m.spin.setAttribute('transform', `rotate(${m.rot.toFixed(1)})`); }
+function lenOf(pts) { let L = 0; for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); return L; }
+// Rolt langs een lijn van punten; ctl.speed = pixels per seconde (mag onderweg veranderen)
+function roll(m, pts, ctl) {
+  const run = RUN, segs = [];
+  for (let i = 1; i < pts.length; i++) segs.push({ a: pts[i - 1], b: pts[i], l: Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]) });
+  const L = segs.reduce((s, x) => s + x.l, 0);
+  return new Promise(res => {
+    let d = 0, last = performance.now();
+    function f(now) {
+      if (run !== RUN) return;
+      const dt = Math.min(.05, (now - last) / 1000); last = now;
+      const step = ctl.speed * dt; d = Math.min(L, d + step);
+      let k = d, i = 0; while (i < segs.length - 1 && k > segs[i].l) { k -= segs[i].l; i++; }
+      const sg = segs[i], t = sg.l ? Math.min(1, k / sg.l) : 1;
+      const dir = sg.b[0] >= sg.a[0] ? 1 : -1;
+      m.rot += dir * step / R * 57.3;
+      place(m, sg.a[0] + (sg.b[0] - sg.a[0]) * t, sg.a[1] + (sg.b[1] - sg.a[1]) * t);
+      if (d >= L) res(); else requestAnimationFrame(f);
+    }
+    requestAnimationFrame(f);
+  });
+}
+// Vallen met zwaartekracht, met een klein botsje
+function fly(m, vx, toX, toY) {
+  const run = RUN;
+  return new Promise(res => {
+    const x0 = m.x, y0 = m.y, g = 2600, T = Math.sqrt(2 * Math.max(1, toY - y0) / g), vxx = (toX - x0) / T;
+    let t = 0, last = performance.now();
+    function f(now) {
+      if (run !== RUN) return;
+      t += Math.min(.05, (now - last) / 1000); last = now;
+      const tt = Math.min(t, T);
+      m.rot += vxx * .016 / R * 57.3;
+      place(m, x0 + vxx * tt, y0 + .5 * g * tt * tt);
+      if (t >= T) res(); else requestAnimationFrame(f);
+    }
+    requestAnimationFrame(f);
+  });
+}
+const NORMAL = { speed: 520 };
+const pointOn = (r, f) => atop(r.x1 + (r.x2 - r.x1) * f, r.y1 + (r.y2 - r.y1) * f);
+function arcPts(i) {
+  const t = turns[i], pts = [];
+  for (let a = -90; a <= 90; a += 10) pts.push([t.cx + t.s * TURN_R * Math.cos(a * Math.PI / 180), t.cy + TURN_R * Math.sin(a * Math.PI / 180)]);
+  return pts;
+}
+
+/* ---- ronde ---- */
+let G = null;
+const TEMPO = { snel: 12, supersnel: 7 };
+function updTop() {
+  $('#fill').style.width = (100 * G.done / G.total) + '%';
+  $('#plabel').textContent = `🔵 ${G.inTray} / ${G.total}`;
+  $('#nok').textContent = G.ok; $('#nbad').textContent = G.bad;
+}
+function feedback(res) {
+  if (res.ok) { G.ok++; sfx('ok'); toast(res.dt < 4 ? '⚡ Supersnel!' : pick(PRAISE), 'ok'); }
+  else { G.bad++; sfx('bad'); G.wrongs.push(res.q.text + (res.q.head ? ' (' + res.q.head + ')' : '') + ' → ' + res.q.ans); toast(res.timeout ? `⏰ Te laat! Het is ${res.q.ans}` : `Oeps! Het is ${res.q.ans}`, 'bad'); }
+  updTop();
+}
+async function stageRamp(m, i) {
+  const r = RAMPS[i], start = atop(r.x1, r.y1), end = atop(r.x2, r.y2);
+  if (S.tempo === 'rustig') {
+    const wp = pointOn(r, 1 - 90 / Math.abs(r.x2 - r.x1));
+    await roll(m, [start, wp], NORMAL);
+    if (G.run !== RUN) return false;
+    const res = await ask(makeQ()); feedback(res);
+    if (res.ok) { setSwitch(i, true); sfx('click'); await wait(350); await roll(m, [wp, end], NORMAL); return true; }
+    await wait(900); await roll(m, [wp, end], NORMAL); return false;
+  }
+  const L = lenOf([start, end]), ctl = { speed: L / TEMPO[S.tempo] };
+  let res = null;
+  ask(makeQ()).then(r2 => { res = r2; feedback(r2); if (r2.ok) { setSwitch(i, true); sfx('click'); } ctl.speed = Math.max(ctl.speed, 700); });
+  await roll(m, [start, end], ctl);
+  if (G.run !== RUN) return false;
+  if (!res) { timeoutQ(); await wait(30); }
+  if (res && res.ok) await wait(200);
+  return !!(res && res.ok);
+}
+async function runMarble() {
+  const m = newMarble(), run = RUN;
+  [0, 1, 2].forEach(i => setSwitch(i, false));
+  idle('🔵 Daar komt een knikker…');
+  place(m, 230, 20);
+  await roll(m, [[230, 20], atop(RAMPS[0].x1, RAMPS[0].y1)], { speed: 600 });
+  for (let i = 0; i < 3; i++) {
+    if (run !== RUN) return;
+    const ok = await stageRamp(m, i);
+    if (run !== RUN) return;
+    if (!ok) {
+      idle('💥 Plof!');
+      const t = turns[i], side = t.s > 0 ? 'r' : 'l', n = G.fell[side]++;
+      const tx = t.s > 0 ? 1530 - (n % 3) * 54 : 70 + (n % 3) * 54;
+      await fly(m, t.s, tx, GROUND - R - Math.floor(n / 3) * 2);
+      sfx('plof'); m.g.classList.add('lost');
+      if (MEMES && !G.saidFall && Math.random() < .5) { G.saidFall = true; say(pick(['Oh my days', 'Bruh', 'Cooked']), 'en-US'); }
+      return false;
+    }
+    idle('🔵 De wissel staat goed!');
+    await roll(m, arcPts(i), NORMAL);
+  }
+  const r = RAMPS[3];
+  await roll(m, [atop(r.x1, r.y1), atop(r.x2, r.y2)], NORMAL);
+  if (run !== RUN) return;
+  const k = G.inTray, tx = TRAY.x + 46 + (k % 5) * 47, ty = TRAY.y + TRAY.h - R - 4 - Math.floor(k / 5) * 44;
+  await fly(m, -1, tx, ty);
+  G.inTray++; sfx('win'); setVeil();
+  toast(pick(['In het bakje! 🎉', 'Raak! 🎯', 'Yes! 🔵']), 'ok');
+  return true;
+}
+async function startRound() {
+  RUN++; $('#endp').hidden = true;
+  G = { run: RUN, total: S.knikkers, done: 0, inTray: 0, ok: 0, bad: 0, fell: { l: 0, r: 0 }, wrongs: [], t0: Date.now() };
+  buildBoard(pickPic());
+  show('game'); updTop();
+  for (let k = 0; k < G.total; k++) {
+    await runMarble();
+    if (G.run !== RUN) return;
+    G.done++; updTop();
+    await wait(700);
+  }
+  finish();
+}
+function finish() {
+  idle('🏁 Klaar!');
+  const perfect = G.inTray === G.total;
+  $('#veil').style.opacity = 0;
+  toast(endWord(perfect), 'ok'); sfx('win');
+  saveHist({ score: G.inTray, total: G.total, ok: G.ok, bad: G.bad, tempo: S.tempo, secs: Math.round((Date.now() - G.t0) / 1000), wrongs: G.wrongs });
+  setTimeout(() => {
+    if (G.run !== RUN) return;
+    endScreen(`<div class="big">${perfect ? '🏆' : '🔵'}</div><h2>${G.inTray} van de ${G.total} knikkers in het bakje!</h2>
+      <p>✓ ${G.ok} juist · ✗ ${G.bad} fout</p>${G.wrongs.length ? `<p style="font-size:15px">Oefen nog eens: ${G.wrongs.slice(0, 4).map(esc).join(', ')}</p>` : ''}`);
+  }, 2600);
+}
+
+</script>
+</body>
+</html>

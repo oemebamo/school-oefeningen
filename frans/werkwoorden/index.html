@@ -53,6 +53,7 @@ h1{margin:0;font-size:clamp(34px,6vw,54px);letter-spacing:-.5px}
 .card{background:var(--card);border-radius:24px;padding:20px 22px;margin-bottom:18px;box-shadow:0 2px 0 var(--line),0 10px 30px rgba(35,38,74,.06)}
 .card h2{margin:0 0 14px;font-size:22px}
 .card h2 small{font-size:15px;color:var(--muted);font-weight:500;margin-left:6px}
+.niv{font-weight:800;line-height:1.5}.niv a{color:var(--accent);font-weight:800;margin-left:6px}
 .row{display:grid;grid-template-columns:140px 1fr;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
 .row:first-of-type{border-top:0}
 .row>label{font-weight:700;color:var(--muted)}
@@ -245,18 +246,12 @@ td.w{color:var(--muted);font-size:13px}
     <button id="go" class="go">Start ▶</button>
 
     <div class="card">
-      <h2>Kies je oefening</h2>
-      <div class="types" id="types"></div>
-    </div>
-
-    <div class="card">
       <h2>Instellingen <small>voor papa of mama</small></h2>
-      <div class="row"><label>Niveau</label><div><div class="seg" id="levels"></div><p class="hint" id="lvlHint" style="margin:8px 0 0"></p></div></div>
+      <div class="row"><label>Niveau</label><div class="niv"><span id="nivTxt"></span> <a href="../../niveau/index.html?g=wolf">Aanpassen</a></div></div>
       <div class="row"><label>Puzzelstukjes</label>
         <div class="seg" data-key="pieces"><button data-val="6">6</button><button data-val="9">9</button><button data-val="12">12</button><button data-val="16">16</button><button data-val="20">20</button><button data-val="24">24</button></div></div>
       <div class="row"><label>Extra</label>
         <div class="toggles">
-          <label class="tog"><input type="checkbox" id="nlOnly"> Enkel het Nederlands tonen: zelf vertalen én vervoegen</label>
           <label class="tog"><input type="checkbox" id="sfx"> Geluidjes bij juist en fout</label>
           <label class="tog"><input type="checkbox" id="videoSound"> Videogeluid al tijdens het spelen</label>
         </div></div>
@@ -302,6 +297,7 @@ td.w{color:var(--muted);font-size:13px}
 
 <div id="fx"></div>
 
+<script src="../../niveau.js"></script>
 <script src="../../geluiden/geluiden.js"></script>
 <script src="../../wiskunde/hoofdrekenen-20-puzzel/videos/videos.js"></script>
 <script src="../../afbeeldingen-wolven/afbeeldingen.js"></script>
@@ -318,59 +314,31 @@ const store = {
 
 /* ---------------- Settings ---------------- */
 const VIDEO_DIR = '../../wiskunde/hoofdrekenen-20-puzzel/videos/'; // zelfde video's als de rekenspelletjes
-const TYPES = {
-  er:     { icon: '🗣️', title: 'Werkwoorden op -ER', sub: 'parler, chanter, danser, … en manger, nager, commencer' },
-  irre:   { icon: '🔁', title: 'Werkwoorden op -IR en -RE', sub: 'finir, choisir, attendre, répondre' },
-  onregel:{ icon: '⭐', title: 'Onregelmatige werkwoorden', sub: 'être, avoir, aller, faire, prendre, venir, vouloir' },
-  alles:  { icon: '🎲', title: 'Alles door elkaar', sub: 'Alle werkwoorden van het grammaticablad' },
-  kaartjes: { icon: '🃏', title: 'De werkwoordkaartjes', sub: 'De 16 werkwoorden op -ER van de kaartjes' }
-};
-// De werkwoorden op de kaartjes die nu geoefend worden
-const KAARTJES = ['regarder', 'habiter', 'dessiner', 'donner', 'chercher', 'parler', 'fermer', 'sauter',
-                  'demander', 'jouer', 'trouver', 'porter', 'écouter', 'travailler', 'marcher', 'aimer'];
-const LEVELS = ['kiezen', 'typen'];
-const DEFAULTS = { name: '', type: 'er', level: 0, pieces: 9, nlOnly: false, sfx: true, videoSound: false, memes: false };
+const DEFAULTS = { name: '', pieces: 9, sfx: true, videoSound: false, memes: false };
 const S = Object.assign({}, DEFAULTS, store.get('fp.settings', {}));
-const fromHash = location.hash.replace('#', '');
-if (TYPES[fromHash]) S.type = fromHash;           // de homepage linkt rechtstreeks naar #er, #irre, ...
-if (!TYPES[S.type]) S.type = 'er';
+// Welke werkwoorden, kiezen of typen, enkel Nederlands: van de pagina "Wat kan ik al?"
+const NV = NIVEAU.load('wolf');
+S.nlOnly = NV.frans.nlOnly;
 // De naam en 'Irritante memes' stel je in op de homepage
 const GREET = pick(['Ewa drerrie', 'Yo bro', 'Hey gast']); // begroeting bij memes, één keer per bezoek gekozen
 const NAME = () => S.name || 'wolf'; // standaardnaam als er nog niets is ingevuld (bovenbouw = wolven)
 const saveS = () => store.set('fp.settings', S);
 // Rad van vervoegingen: dezelfde pagina met ?rad. Je draait aan een rad met de 6 personen en typt zelf de vorm.
 const RAD = new URLSearchParams(location.search).has('rad');
-const LV = () => (RAD || S.level === 1 ? 1 : 0);
-
-function renderTypes() {
-  $('#types').innerHTML = Object.entries(TYPES).map(([k, t]) =>
-    `<button class="${k === S.type ? 'on' : ''}" data-t="${k}"><span>${t.icon}</span>${t.title}</button>`).join('');
-}
-$('#types').addEventListener('click', e => {
-  const b = e.target.closest('[data-t]'); if (!b) return;
-  S.type = b.dataset.t; saveS();
-  try { history.replaceState(null, '', '#' + S.type); } catch (err) { location.hash = S.type; }
-  syncUI();
-});
-$('#levels').addEventListener('click', e => {
-  const b = e.target.closest('[data-l]'); if (!b) return;
-  S.level = +b.dataset.l; saveS(); syncUI();
-});
+const LV = () => (RAD || NV.frans.mode === 'typen' ? 1 : 0);
 
 function syncUI() {
-  const T = TYPES[S.type];
-  renderTypes();
-  $('#logo').textContent = RAD ? '🎡' : T.icon; $('#title').textContent = RAD ? 'Rad van vervoegingen' : T.title;
-  $('#sub').textContent = RAD ? `${T.title}: draai aan het rad en schrijf de juiste vorm` : T.sub;
-  document.title = (RAD ? 'Rad van vervoegingen' : T.title) + " · Hippo's Oefeningen";
-  $('#levels').closest('.row').hidden = RAD;
-  $('#levels').innerHTML = LEVELS.map((l, i) => `<button class="${i === LV() ? 'on' : ''}" data-l="${i}">${l}</button>`).join('');
-  $('#lvlHint').textContent = LV() === 0 ? 'Tik de juiste vorm aan.' : 'Schrijf de vorm zelf, accenten tellen mee.';
+  $('#logo').textContent = RAD ? '🎡' : '🗣️'; $('#title').textContent = RAD ? 'Rad van vervoegingen' : 'Franse werkwoorden';
+  $('#sub').textContent = RAD ? 'Draai aan het rad en schrijf de juiste vorm' : (LV() ? 'Schrijf de vorm zelf, accenten tellen mee' : 'Tik de juiste vorm aan');
+  document.title = (RAD ? 'Rad van vervoegingen' : 'Franse werkwoorden') + " · Hippo's Oefeningen";
+  const vs = NV.frans.verbs, sets = Object.entries(FR.SETS).find(([k, l]) => l.length === vs.length && l.every(v => vs.includes(v)));
+  const which = sets ? { kaartjes: 'de 16 kaartjes', er: 'alle werkwoorden op -ER', irre: 'werkwoorden op -IR en -RE', onregel: 'de onregelmatige werkwoorden', alles: 'alle werkwoorden' }[sets[0]] : `${vs.length} werkwoorden`;
+  $('#nivTxt').textContent = `${which[0].toUpperCase() + which.slice(1)}, ${RAD || LV() ? 'zelf typen' : 'kiezen uit 4'}${S.nlOnly ? ', enkel Nederlands' : ''}.`;
   $$('.seg[data-key]').forEach(seg => {
     const k = seg.dataset.key;
     seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(S[k]) === b.dataset.val));
   });
-  $('#sfx').checked = S.sfx; $('#videoSound').checked = S.videoSound; $('#nlOnly').checked = S.nlOnly;
+  $('#sfx').checked = S.sfx; $('#videoSound').checked = S.videoSound;
   $('#hello').textContent = `${S.memes ? GREET : 'Hoi'} ${NAME()}! Klaar om te puzzelen?`;
 }
 $$('.seg[data-key]').forEach(seg => seg.addEventListener('click', e => {
@@ -379,8 +347,7 @@ $$('.seg[data-key]').forEach(seg => seg.addEventListener('click', e => {
   S[k] = k === 'pieces' ? +b.dataset.val : b.dataset.val;
   saveS(); syncUI();
 }));
-['sfx', 'videoSound', 'nlOnly'].forEach(id => $('#' + id).addEventListener('change', e => { S[id] = e.target.checked; saveS(); syncUI(); }));
-window.addEventListener('hashchange', () => { const h = location.hash.replace('#', ''); if (TYPES[h] && h !== S.type) { S.type = h; saveS(); syncUI(); } });
+['sfx', 'videoSound'].forEach(id => $('#' + id).addEventListener('change', e => { S[id] = e.target.checked; saveS(); syncUI(); }));
 
 /* ---------------- Videos (kept on this device in IndexedDB) ---------------- */
 const VDB = {
@@ -555,41 +522,7 @@ const R = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 const shuffle = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = R(0, i); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 const BOX = { box: true };
 const PERS = ['je', 'tu', 'il', 'nous', 'vous', 'ils'];          // index 0..5
-const END = {
-  er: ['e', 'es', 'e', 'ons', 'ez', 'ent'],
-  ir: ['is', 'is', 'it', 'issons', 'issez', 'issent'],      // zoals finir
-  re: ['s', 's', '', 'ons', 'ez', 'ent']                     // zoals attendre
-};
-// [infinitief, betekenis, groep]
-const VERBS = [
-  ['parler', 'praten', 'er'], ['chanter', 'zingen', 'er'], ['danser', 'dansen', 'er'], ['jouer', 'spelen', 'er'],
-  ['aimer', 'graag hebben', 'er'], ['habiter', 'wonen', 'er'], ['regarder', 'kijken naar', 'er'], ['écouter', 'luisteren naar', 'er'],
-  ['marcher', 'wandelen', 'er'], ['sauter', 'springen', 'er'], ['dessiner', 'tekenen', 'er'], ['travailler', 'werken', 'er'],
-  ['chercher', 'zoeken', 'er'], ['trouver', 'vinden', 'er'], ['donner', 'geven', 'er'], ['demander', 'vragen', 'er'],
-  ['porter', 'dragen', 'er'], ['fermer', 'sluiten', 'er'],
-  ['manger', 'eten', 'er'], ['nager', 'zwemmen', 'er'], ['commencer', 'beginnen', 'er'],   // spelling past zich aan bij nous
-  ['finir', 'eindigen', 'ir'], ['choisir', 'kiezen', 'ir'], ['attendre', 'wachten', 're'], ['répondre', 'antwoorden', 're'],
-  ['être', 'zijn', 'x'], ['avoir', 'hebben', 'x'], ['aller', 'gaan', 'x'], ['faire', 'doen of maken', 'x'],
-  ['prendre', 'nemen', 'x'], ['venir', 'komen', 'x'], ['vouloir', 'willen', 'x']
-];
-const IRREG = {
-  'être': ['suis', 'es', 'est', 'sommes', 'êtes', 'sont'],
-  avoir: ['ai', 'as', 'a', 'avons', 'avez', 'ont'],
-  aller: ['vais', 'vas', 'va', 'allons', 'allez', 'vont'],
-  faire: ['fais', 'fais', 'fait', 'faisons', 'faites', 'font'],
-  prendre: ['prends', 'prends', 'prend', 'prenons', 'prenez', 'prennent'],
-  venir: ['viens', 'viens', 'vient', 'venons', 'venez', 'viennent'],
-  vouloir: ['veux', 'veux', 'veut', 'voulons', 'voulez', 'veulent']
-};
-function conj(inf, group) {
-  if (group === 'x') return IRREG[inf];
-  const stem = inf.slice(0, -2);
-  const f = END[group].map(e => stem + e);
-  if (inf === 'manger' || inf === 'nager') f[3] = stem + 'eons';     // nous mangeons
-  if (inf === 'commencer') f[3] = 'commençons';                       // nous commençons
-  return f;
-}
-const elide = form => /^[aeiouhéèêâîôû]/i.test(form);                 // j’aime, j’habite, j’ai
+const { END, VERBS, IRREG, conj, elide } = FR;               // de lijst staat in niveau.js, op één plek voor alle spelletjes
 // Valkuilen voor de meerkeuze: de vorm die je zou maken met het verkeerde patroon
 function traps(inf, group, p, forms) {
   const stem = inf.slice(0, -2), t = [];
@@ -602,11 +535,7 @@ function traps(inf, group, p, forms) {
   if (group === 'x') { const st = inf.replace(/(er|ir|re|oir)$/, ''); t.push(st + END.er[p]); }  // ils allent
   return t.filter(x => !forms.includes(x) || x !== forms[p]);
 }
-function pool() {
-  if (S.type === 'kaartjes') return VERBS.filter(v => KAARTJES.includes(v[0]));
-  const g = { er: ['er'], irre: ['ir', 're'], onregel: ['x'], alles: ['er', 'ir', 're', 'x'] }[S.type];
-  return VERBS.filter(v => g.includes(v[2]));
-}
+function pool() { return VERBS.filter(v => NV.frans.verbs.includes(v[0])); }
 function makeQuestion() {
   const [inf, nlw, group] = pick(pool());
   const forms = conj(inf, group);
@@ -691,7 +620,7 @@ function show(id) { $$('.screen').forEach(s => s.classList.toggle('active', s.id
 function startRound() {
   const n = S.pieces;
   G = { n, open: new Set(), streak: 0, asked: 0, ok: 0, bad: 0, fast: 0, times: [], wrongs: [], pending: [], recent: [],
-        cur: null, input: '', lock: false, t0: 0, startT: Date.now(), done: false, type: S.type, level: RAD ? 2 : LV() };
+        cur: null, input: '', lock: false, t0: 0, startT: Date.now(), done: false, type: 'niveau', level: RAD ? 2 : LV(), verbs: NV.frans.verbs.length };
   G.pieces = buildPuzzle(n);
   $('#fbtext').textContent = `Bravo ${NAME()}!`;
   const v = pickVideo();
@@ -916,7 +845,7 @@ function finish() {
   const avg = G.times.length ? G.times.reduce((a, b) => a + b, 0) / G.times.length : 0;
   const wrongs = [...new Set(G.wrongs)];
   const hist = store.get('fp.history', []);
-  hist.unshift({ d: Date.now(), n: G.n, asked: G.asked, ok: G.ok, bad: G.bad, avg, secs, name: S.name || '', type: G.type, level: G.level, wrongs });
+  hist.unshift({ d: Date.now(), n: G.n, asked: G.asked, ok: G.ok, bad: G.bad, avg, secs, name: S.name || '', type: G.type, level: G.level, verbs: G.verbs, wrongs });
   store.set('fp.history', hist.slice(0, 200));
 
   sfx('win'); confetti();

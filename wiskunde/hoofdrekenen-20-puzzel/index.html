@@ -53,6 +53,7 @@ h1{margin:0;font-size:clamp(34px,6vw,54px);letter-spacing:-.5px}
 .card{background:var(--card);border-radius:24px;padding:20px 22px;margin-bottom:18px;box-shadow:0 2px 0 var(--line),0 10px 30px rgba(35,38,74,.06)}
 .card h2{margin:0 0 14px;font-size:22px}
 .card h2 small{font-size:15px;color:var(--muted);font-weight:500;margin-left:6px}
+.niv{font-weight:800}.niv a{color:var(--accent);font-weight:800;margin-left:6px}
 .row{display:grid;grid-template-columns:140px 1fr;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
 .row:first-of-type{border-top:0}
 .row>label{font-weight:700;color:var(--muted)}
@@ -186,15 +187,12 @@ td.w{color:var(--muted);font-size:13px}
 
     <div class="card">
       <h2>Instellingen <small>voor papa of mama</small></h2>
-      <div class="row"><label>Sommen</label>
-        <div class="seg" data-key="ops"><button data-val="plus">+ plus</button><button data-val="min">− min</button><button data-val="beide">+ en −</button></div></div>
       <div class="row"><label>Niveau</label>
-        <div class="seg" data-key="level"><button data-val="tot10">tot 10</button><button data-val="zonder">tot 20 zonder brug</button><button data-val="met">tot 20 met brug</button><button data-val="alles">alles tot 20</button></div></div>
+        <div class="niv"><span id="nivTxt"></span><a href="../../niveau/index.html?g=pimpelmees">Aanpassen</a></div></div>
       <div class="row"><label>Puzzelstukjes</label>
         <div class="seg" data-key="pieces"><button data-val="6">6</button><button data-val="9">9</button><button data-val="12">12</button><button data-val="16">16</button><button data-val="20">20</button><button data-val="24">24</button></div></div>
       <div class="row"><label>Extra</label>
         <div class="toggles">
-          <label class="tog"><input type="checkbox" id="missing"> Ook ontbrekend getal <span class="ex">(7 + ? = 12)</span></label>
           <label class="tog"><input type="checkbox" id="sfx"> Geluidjes bij juist en fout</label>
           <label class="tog"><input type="checkbox" id="videoSound"> Videogeluid al tijdens het spelen</label>
         </div></div>
@@ -240,6 +238,7 @@ td.w{color:var(--muted);font-size:13px}
 
 <div id="fx"></div>
 
+<script src="../../niveau.js"></script>
 <script src="../../geluiden/geluiden.js"></script>
 <script src="videos/videos.js"></script>
 <script src="../afbeeldingen/afbeeldingen.js"></script>
@@ -261,6 +260,9 @@ const S = Object.assign({}, DEFAULTS, store.get('sp.settings', {}));
 const GREET = pick(['Ewa drerrie', 'Yo bro', 'Hey gast']); // begroeting bij memes, één keer per bezoek gekozen
 const NAME = () => S.name || 'pimpelmees'; // standaardnaam als er nog niets is ingevuld
 // 'Irritante memes' stel je in op de homepage (die schrijft S.memes in beide spelletjes)
+// Het niveau (welke sommen) komt van de pagina "Wat kan ik al?"; hier staan enkel speelinstellingen
+const NV = NIVEAU.load('pimpelmees');
+S.level = NV.sommen.level; S.ops = NV.sommen.ops; S.missing = NV.sommen.missing;
 const saveS = () => store.set('sp.settings', S);
 const LEVELS = { tot10: 'tot 10', zonder: 'tot 20 zonder brug', met: 'tot 20 met brug', alles: 'alles tot 20' };
 const OPS = { plus: '+', min: '−', beide: '+ −' };
@@ -270,7 +272,8 @@ function syncUI() {
     const k = seg.dataset.key;
     seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(S[k]) === b.dataset.val));
   });
-  $('#missing').checked = S.missing; $('#sfx').checked = S.sfx; $('#videoSound').checked = S.videoSound;
+  $('#nivTxt').textContent = `${NIVEAU.OPS[S.ops]}, ${NIVEAU.SOMMEN_LEVELS[S.level]}${S.missing ? ', ook met ontbrekend getal' : ''}.`;
+  $('#sfx').checked = S.sfx; $('#videoSound').checked = S.videoSound;
   $('#hello').textContent = `${S.memes ? GREET : 'Hoi'} ${NAME()}! Klaar om te puzzelen?`;
 }
 $$('.seg').forEach(seg => seg.addEventListener('click', e => {
@@ -279,7 +282,7 @@ $$('.seg').forEach(seg => seg.addEventListener('click', e => {
   S[k] = k === 'pieces' ? +b.dataset.val : b.dataset.val;
   saveS(); syncUI();
 }));
-['missing', 'sfx', 'videoSound'].forEach(id => $('#' + id).addEventListener('change', e => { S[id] = e.target.checked; saveS(); syncUI(); }));
+['sfx', 'videoSound'].forEach(id => $('#' + id).addEventListener('change', e => { S[id] = e.target.checked; saveS(); syncUI(); }));
 
 /* ---------------- Videos (kept on this device in IndexedDB) ---------------- */
 const VDB = {
