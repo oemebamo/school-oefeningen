@@ -110,8 +110,7 @@ button{font-family:inherit;cursor:pointer}
     </header>
     <button id="go" class="go">Start ▶</button>
     <div class="card">
-      <div class="row"><b>Oefenen</b><div id="soorten"></div></div>
-      <div class="row" id="tafelRow" hidden><b>Welke tafels?</b><div><div class="seg" id="tafelSel"></div><p class="hint" id="tafelHint"></p></div></div>
+      <div class="row"><b>Oefenen</b><div><div id="soorten"></div><p class="hint">Wat er precies in zit, stel je in bij <a href="../../niveau/index.html">Wat kan ik al?</a></p></div></div>
       <div class="row"><b>Doolhof</b><div id="row-grootte"></div></div>
       <div class="row"><b>Geluid</b><label class="tog"><input type="checkbox" id="sfx"> Geluidjes bij juist en fout</label></div>
     </div>
@@ -131,6 +130,7 @@ button{font-family:inherit;cursor:pointer}
   <div class="cpad" id="cpad" hidden></div>
   <div class="endp" id="endp" hidden></div>
 </section>
+<script src="../../niveau.js"></script>
 <script src="../../geluiden/geluiden.js"></script>
 <script>
 const GAME = {
@@ -161,22 +161,20 @@ const BASE = store.get(GROEP === 'wolf' ? 'np.settings' : 'sp.settings', {});
 const NAME = BASE.name || GROEP;
 const MEMES = BASE.memes === true;
 const HERO = GROEP === 'wolf' ? '🐺' : '🐦';
+const NV = NIVEAU.load(GROEP);        // wat het kind al kan: van de pagina "Wat kan ik al?"
+const tafelTxt = () => NV.tafels.length === 10 ? 'alle tafels' : 'tafel ' + NV.tafels.join(', ');
 
 const SOORTEN = GROEP === 'wolf' ? {
-  rekenen: ['🧮', 'Hoofdrekenen tot 100', '+ en − met brug'],
-  tafels:  ['✖️', 'Tafels', 'maal en gedeeld door'],
-  frans:   ['🇫🇷', 'Frans', 'de 16 werkwoordkaartjes']
+  rekenen: ['🧮', 'Hoofdrekenen', NV.reken.brug.lv === 1 ? '+ en − tot 1000' : '+ en − tot 100'],
+  tafels:  ['✖️', 'Tafels', tafelTxt() + (NV.delen ? ', ook gedeeld door' : '')],
+  frans:   ['🇫🇷', 'Frans', NV.frans.verbs.length + ' werkwoorden']
 } : {
-  sommen: ['➕', 'Sommen tot 20', 'plus en min'],
-  tafels: ['✖️', 'Tafels', 'kies hieronder welke']
+  sommen: ['➕', 'Sommen', `${NIVEAU.OPS[NV.sommen.ops]}, ${NIVEAU.SOMMEN_LEVELS[NV.sommen.level]}`],
+  tafels: ['✖️', 'Tafels', tafelTxt()]
 };
 
 const S = Object.assign({ soort: Object.keys(SOORTEN)[0], sfx: true }, GAME.defaults, store.get(GAME.key + '.settings', {}));
 if (!SOORTEN[S.soort]) S.soort = Object.keys(SOORTEN)[0];
-if (!Array.isArray(S.tafels) || !S.tafels.length) {
-  const tp = (store.get('tp.settings', {}).tables || []).filter(n => n >= 1 && n <= 10);
-  S.tafels = GROEP === 'pimpelmees' && tp.length ? tp : GROEP === 'wolf' ? [2, 3, 4, 5, 6, 7, 8, 9, 10] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-}
 const saveS = () => store.set(GAME.key + '.settings', S);
 
 /* ---------- Startscherm ---------- */
@@ -187,26 +185,10 @@ function segHTML(key, opts) {
 function renderStart() {
   $('#soorten').innerHTML = segHTML('soort', Object.entries(SOORTEN).map(([k, t]) => [k, `${t[0]} ${t[1]}`, t[2]]));
   GAME.rows.forEach(r => { $('#row-' + r.key).innerHTML = segHTML(r.key, r.opts); });
-  $('#tafelRow').hidden = S.soort !== 'tafels';
-  $('#tafelSel').classList.add('multi');
-  $('#tafelSel').innerHTML = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<button data-t="${n}" class="${S.tafels.includes(n) ? 'on' : ''}">${n}</button>`).join('');
-  $('#tafelHint').innerHTML = S.tafels.length === 10 ? 'Alle tafels. <a data-t="none">Alles uit</a>' : `Tafel ${S.tafels.join(', ')}. <a data-t="all">Alle tafels</a>`;
   $('#sfx').checked = S.sfx;
   $('#hello').textContent = `Hoi ${NAME}! ${GAME.hello}`;
 }
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-t]');
-  if (t && t.closest('#tafelRow')) {
-    const v = t.dataset.t;
-    if (v === 'all') S.tafels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    else if (v === 'none') S.tafels = [GROEP === 'wolf' ? 2 : 1];
-    else {
-      const n = +v;
-      S.tafels = S.tafels.includes(n) ? S.tafels.filter(x => x !== n) : [...S.tafels, n].sort((a, b) => a - b);
-      if (!S.tafels.length) S.tafels = [n];          // minstens één tafel
-    }
-    saveS(); renderStart(); return;
-  }
   const b = e.target.closest('.seg button'); if (!b) return;
   const k = b.closest('.seg').dataset.key, v = b.dataset.val;
   S[k] = /^\d+$/.test(v) ? +v : v; saveS(); renderStart();
@@ -223,31 +205,54 @@ function makeQ() {
   for (let t = 0; t < 20; t++) { const q = makeQ1(); if (q.text + q.head !== lastKey) { lastKey = q.text + q.head; return q; } }
   return makeQ1();
 }
+const crosses = (a, op, b) => op === '+' ? Math.floor(a / 10) !== Math.floor((a + b) / 10) && (a + b) % 10 !== 0
+                                         : Math.floor(a / 10) !== Math.floor((a - b) / 10) && a % 10 !== 0;
 function makeQ1() {
   const s = S.soort;
   if (s === 'sommen') {
-    if (Math.random() < .5) { const a = rnd(1, 18), b = rnd(1, 20 - a); return num(`${a} + ${b}`, a + b); }
-    const a = rnd(3, 20), b = rnd(1, a - 1); return num(`${a} − ${b}`, a - b);
+    const { level, ops, missing } = NV.sommen, max = level === 'tot10' ? 10 : 20;
+    let a, b, op;
+    for (let t = 0; t < 200; t++) {
+      op = ops === 'plus' ? '+' : ops === 'min' ? '−' : pick(['+', '−']);
+      if (op === '+') { a = rnd(1, max - 1); b = rnd(1, max - a); } else { a = rnd(2, max); b = rnd(1, a - 1); }
+      const x = crosses(a, op, b);
+      if (level === 'zonder' && x) continue;
+      if (level === 'met' && !x) continue;
+      break;
+    }
+    const c = op === '+' ? a + b : a - b;
+    if (missing && Math.random() < .35) return Math.random() < .5 ? { kind: 'num', text: `${a} ${op} ? = ${c}`, ans: String(b), gap: true }
+                                                                  : { kind: 'num', text: `? ${op} ${b} = ${c}`, ans: String(a), gap: true };
+    return num(`${a} ${op} ${b}`, c);
   }
   if (s === 'rekenen') {
+    const big = NV.reken.brug.lv === 1;
     if (Math.random() < .5) {
-      const a = rnd(12, 78), b = rnd(3, Math.min(48, 99 - a));
+      const a = big ? rnd(120, 880) : rnd(12, 78), b = big ? rnd(12, Math.min(99, 999 - a)) : rnd(3, Math.min(48, 99 - a));
       return num(`${a} + ${b}`, a + b);
     }
-    const a = rnd(31, 99), b = rnd(4, Math.min(48, a - 10)); return num(`${a} − ${b}`, a - b);
+    const a = big ? rnd(130, 999) : rnd(31, 99), b = big ? rnd(12, 99) : rnd(4, Math.min(48, a - 10));
+    return num(`${a} − ${b}`, a - b);
   }
   if (s === 'tafels') {
-    const t = pick(S.tafels), k = rnd(1, 10);
-    if (GROEP === 'wolf' && Math.random() < .35) return num(`${t * k} : ${t}`, k);
+    const t = pick(NV.tafels), k = rnd(1, 10);
+    if (GROEP === 'wolf' && NV.delen && Math.random() < .35) return num(`${t * k} : ${t}`, k);
+    if (GROEP === 'pimpelmees' && NV.tafelMissing && Math.random() < .35) return { kind: 'num', text: `${k} × ? = ${k * t}`, ans: String(t), gap: true };
     return num(`${k} × ${t}`, k * t);
   }
-  // Frans: regelmatige -ER-werkwoorden van de kaartjes, kiezen uit 4
-  const [v, nl] = pick(KAARTJES), p = rnd(0, 5), st = v.slice(0, -2);
-  const forms = [st + 'e', st + 'es', st + 'e', st + 'ons', st + 'ez', st + 'ent'];
-  const vowel = /^[aeiouéèêh]/i.test(v);
-  const pron = [vowel ? 'j’' : 'je', 'tu', pick(['il', 'elle']), 'nous', 'vous', pick(['ils', 'elles'])][p];
-  const ans = forms[p], others = shuffle([...new Set(forms)].filter(f => f !== ans)).slice(0, 3);
-  return { kind: 'choice', head: `${v} · ${nl}`, text: pron, ans, options: shuffle([ans, ...others]) };
+  // Frans: de werkwoorden van het niveau, kiezen uit 4
+  const verbs = FR.VERBS.filter(v => NV.frans.verbs.includes(v[0]));
+  const [v, nl, g] = pick(verbs), p = rnd(0, 5), forms = FR.conj(v, g), ans = forms[p];
+  const pron = [FR.elide(ans) ? 'j’' : 'je', 'tu', pick(['il', 'elle']), 'nous', 'vous', pick(['ils', 'elles'])][p];
+  const opts = new Set([ans]);
+  if (NV.frans.nlOnly) {   // enkel Nederlands: ook dezelfde persoon van andere werkwoorden, zodat je echt moet vertalen
+    shuffle(verbs.filter(x => x[0] !== v)).forEach(([oi, , og]) => {
+      const f = FR.conj(oi, og)[p];
+      if (opts.size < 3 && (p !== 0 || FR.elide(f) === FR.elide(ans))) opts.add(f);
+    });
+  }
+  shuffle(forms.slice()).forEach(f => { if (opts.size < 4) opts.add(f); });
+  return { kind: 'choice', head: NV.frans.nlOnly ? nl : `${v} · ${nl}`, text: pron, ans, options: shuffle([...opts]) };
 }
 
 /* ---------- Vraag stellen en antwoord lezen ---------- */
@@ -264,6 +269,7 @@ function renderQ() {
   $('#q').classList.remove('wait');
   $('#q').innerHTML = q.kind === 'choice'
     ? `<div class="qhead">${esc(q.head)}</div><div class="qrow"><span class="pron">${esc(q.text)}</span>${box}</div>`
+    : q.gap ? `<div class="qrow">${q.text.split('?').map(esc).join(box)}</div>`
     : `<div class="qrow"><span>${esc(q.text)} =</span>${box}</div>`;
   const ch = q.kind === 'choice';
   $('#pad').hidden = ch; $('#cpad').hidden = !ch;

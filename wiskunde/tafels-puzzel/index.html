@@ -60,6 +60,7 @@ h1{margin:0;font-size:clamp(34px,6vw,54px);letter-spacing:-.5px}
 .card{background:var(--card);border-radius:24px;padding:20px 22px;margin-bottom:18px;box-shadow:0 2px 0 var(--line),0 10px 30px rgba(35,38,74,.06)}
 .card h2{margin:0 0 14px;font-size:22px}
 .card h2 small{font-size:15px;color:var(--muted);font-weight:500;margin-left:6px}
+.niv{font-weight:800}.niv a{color:var(--accent);font-weight:800;margin-left:6px}
 .row{display:grid;grid-template-columns:140px 1fr;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
 .row:first-of-type{border-top:0}
 .row>label{font-weight:700;color:var(--muted)}
@@ -194,14 +195,12 @@ td.w{color:var(--muted);font-size:13px}
 
     <div class="card">
       <h2>Instellingen <small>voor papa of mama</small></h2>
-      <div class="row"><label>Tafels</label>
-        <div><div class="tables" id="tables"></div>
-        <div class="tblbtns"><button class="btn" data-all="1">Alle</button><button class="btn" data-all="0">Geen</button></div></div></div>
+      <div class="row"><label>Niveau</label>
+        <div class="niv"><span id="nivTxt"></span><a href="../../niveau/index.html?g=pimpelmees">Aanpassen</a></div></div>
       <div class="row"><label>Puzzelstukjes</label>
         <div class="seg" data-key="pieces"><button data-val="6">6</button><button data-val="9">9</button><button data-val="12">12</button><button data-val="16">16</button><button data-val="20">20</button><button data-val="24">24</button></div></div>
       <div class="row"><label>Extra</label>
         <div class="toggles">
-          <label class="tog"><input type="checkbox" id="missing"> Ook ontbrekend getal <span class="ex">(3 × ? = 21)</span></label>
           <label class="tog"><input type="checkbox" id="sfx"> Geluidjes bij juist en fout</label>
           <label class="tog"><input type="checkbox" id="videoSound"> Videogeluid al tijdens het spelen</label>
         </div></div>
@@ -247,6 +246,7 @@ td.w{color:var(--muted);font-size:13px}
 
 <div id="fx"></div>
 
+<script src="../../niveau.js"></script>
 <script src="../../geluiden/geluiden.js"></script>
 <script src="../hoofdrekenen-20-puzzel/videos/videos.js"></script>
 <script src="../afbeeldingen/afbeeldingen.js"></script>
@@ -269,31 +269,21 @@ const S = Object.assign({}, DEFAULTS, store.get('tp.settings', {}));
 const GREET = pick(['Ewa drerrie', 'Yo bro', 'Hey gast']); // begroeting bij memes, één keer per bezoek gekozen
 const NAME = () => S.name || 'pimpelmees'; // standaardnaam als er nog niets is ingevuld
 // 'Irritante memes' stel je in op de homepage (die schrijft S.memes in beide spelletjes)
+// Welke tafels: van de pagina "Wat kan ik al?"; hier staan enkel speelinstellingen
+const NV = NIVEAU.load('pimpelmees');
+S.tables = NV.tafels.slice(); S.missing = NV.tafelMissing;
 const saveS = () => store.set('tp.settings', S);
 const tblLabel = t => (t || []).length === 10 ? 'alle tafels' : 'tafel ' + (t || []).join(', ');
 function renderTables() {
-  $('#tables').innerHTML = [1,2,3,4,5,6,7,8,9,10].map(n => {
-    const on = S.tables.includes(n);
-    return `<label class="${on ? 'on' : ''}"><input type="checkbox" data-t="${n}" ${on ? 'checked' : ''}>${n}</label>`;
-  }).join('');
+  $('#nivTxt').textContent = (S.tables.length === 10 ? 'Alle tafels' : 'Tafel ' + S.tables.join(', ')) + (S.missing ? ', ook met ontbrekend getal.' : '.');
 }
-$('#tables').addEventListener('change', e => {
-  const n = +e.target.dataset.t; if (!n) return;
-  S.tables = e.target.checked ? [...new Set([...S.tables, n])].sort((a, b) => a - b) : S.tables.filter(x => x !== n);
-  saveS(); renderTables(); $('#warn').hidden = true;
-});
-document.querySelector('.tblbtns').addEventListener('click', e => {
-  const b = e.target.closest('[data-all]'); if (!b) return;
-  S.tables = b.dataset.all === '1' ? [1,2,3,4,5,6,7,8,9,10] : [];
-  saveS(); renderTables();
-});
 
 function syncUI() {
   $$('.seg').forEach(seg => {
     const k = seg.dataset.key;
     seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(S[k]) === b.dataset.val));
   });
-  $('#missing').checked = S.missing; $('#sfx').checked = S.sfx; $('#videoSound').checked = S.videoSound;
+  $('#sfx').checked = S.sfx; $('#videoSound').checked = S.videoSound;
   $('#hello').textContent = `${S.memes ? GREET : 'Hoi'} ${NAME()}! Klaar om te puzzelen?`;
 }
 $$('.seg').forEach(seg => seg.addEventListener('click', e => {
@@ -302,7 +292,7 @@ $$('.seg').forEach(seg => seg.addEventListener('click', e => {
   S[k] = k === 'pieces' ? +b.dataset.val : b.dataset.val;
   saveS(); syncUI();
 }));
-['missing', 'sfx', 'videoSound'].forEach(id => $('#' + id).addEventListener('change', e => { S[id] = e.target.checked; saveS(); syncUI(); }));
+['sfx', 'videoSound'].forEach(id => $('#' + id).addEventListener('change', e => { S[id] = e.target.checked; saveS(); syncUI(); }));
 
 /* ---------------- Videos (kept on this device in IndexedDB) ---------------- */
 const VDB = {

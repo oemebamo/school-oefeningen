@@ -53,6 +53,7 @@ h1{margin:0;font-size:clamp(34px,6vw,54px);letter-spacing:-.5px}
 .card{background:var(--card);border-radius:24px;padding:20px 22px;margin-bottom:18px;box-shadow:0 2px 0 var(--line),0 10px 30px rgba(35,38,74,.06)}
 .card h2{margin:0 0 14px;font-size:22px}
 .card h2 small{font-size:15px;color:var(--muted);font-weight:500;margin-left:6px}
+.niv{font-weight:800;line-height:1.5}.niv a{color:var(--accent);font-weight:800;margin-left:6px}
 .row{display:grid;grid-template-columns:140px 1fr;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
 .row:first-of-type{border-top:0}
 .row>label{font-weight:700;color:var(--muted)}
@@ -211,19 +212,12 @@ td.w{color:var(--muted);font-size:13px}
     <button id="go" class="go">Start ▶</button>
 
     <div class="card">
-      <h2>Kies je oefening</h2>
-      <div class="types" id="types"></div>
-    </div>
-
-    <div class="card">
       <h2>Instellingen <small>voor papa of mama</small></h2>
-      <div class="row"><label>Niveau</label><div class="seg" id="levels"></div></div>
+      <div class="row"><label>Niveau</label><div class="niv"><span id="nivTxt"></span> <a href="../../niveau/index.html?g=wolf">Aanpassen</a></div></div>
       <div class="row"><label>Puzzelstukjes</label>
         <div class="seg" data-key="pieces"><button data-val="6">6</button><button data-val="9">9</button><button data-val="12">12</button><button data-val="16">16</button><button data-val="20">20</button><button data-val="24">24</button></div></div>
       <div class="row"><label>Extra</label>
         <div class="toggles">
-          <label class="tog" id="stepsRow"><input type="checkbox" id="steps"> <span id="stepsLbl"></span></label>
-          <label class="tog" id="brugRow"><input type="checkbox" id="brugMix"> Brugsommen tussendoor <span class="ex">(1 op 4)</span></label>
           <label class="tog"><input type="checkbox" id="sfx"> Geluidjes bij juist en fout</label>
           <label class="tog"><input type="checkbox" id="videoSound"> Videogeluid al tijdens het spelen</label>
         </div></div>
@@ -273,6 +267,7 @@ td.w{color:var(--muted);font-size:13px}
 
 <div id="fx"></div>
 
+<script src="../../niveau.js"></script>
 <script src="../../geluiden/geluiden.js"></script>
 <script src="../hoofdrekenen-20-puzzel/videos/videos.js"></script>
 <script src="../../afbeeldingen-wolven/afbeeldingen.js"></script>
@@ -309,44 +304,25 @@ const DEFAULTS = { name: '', type: 'brug', level: {}, stepsBy: { maal: true, kom
                    brugMix: true, pieces: 9, sfx: true, videoSound: false, memes: false };
 const S = Object.assign({}, DEFAULTS, store.get('np.settings', {}));
 S.level = Object.assign({}, S.level); S.stepsBy = Object.assign({}, DEFAULTS.stepsBy, S.stepsBy);
-const fromHash = location.hash.replace('#', '');
-if (TYPES[fromHash]) S.type = fromHash;           // de homepage linkt rechtstreeks naar #brug, #delen, ...
-if (!TYPES[S.type]) S.type = 'brug';
+// Welke soorten en op welk niveau: van de pagina "Wat kan ik al?". De Rekenpuzzel mengt alles wat aangevinkt is.
+const NV = NIVEAU.load('wolf');
+const ON = Object.keys(TYPES).filter(k => NV.reken[k] && NV.reken[k].on);
+const LVof = k => NV.reken[k].lv;
+const STEPSof = k => !!(TYPES[k].steps && NV.reken[k].steps);
 // De naam en 'Irritante memes' stel je in op de homepage
 const GREET = pick(['Ewa drerrie', 'Yo bro', 'Hey gast']); // begroeting bij memes, één keer per bezoek gekozen
 const NAME = () => S.name || 'wolf'; // standaardnaam als er nog niets is ingevuld (bovenbouw = wolven)
 const saveS = () => store.set('np.settings', S);
-const LV = () => S.level[S.type] ?? 1;
-const STEPS = () => !!(TYPES[S.type].steps && S.stepsBy[S.type]);
-
-function renderTypes() {
-  $('#types').innerHTML = Object.entries(TYPES).map(([k, t]) =>
-    `<button class="${k === S.type ? 'on' : ''}" data-t="${k}"><span>${t.icon}</span>${t.title}</button>`).join('');
-}
-$('#types').addEventListener('click', e => {
-  const b = e.target.closest('[data-t]'); if (!b) return;
-  S.type = b.dataset.t; saveS();
-  try { history.replaceState(null, '', '#' + S.type); } catch (err) { location.hash = S.type; }
-  syncUI();
-});
-$('#levels').addEventListener('click', e => {
-  const b = e.target.closest('[data-l]'); if (!b) return;
-  S.level[S.type] = +b.dataset.l; saveS(); syncUI();
-});
 
 function syncUI() {
-  const T = TYPES[S.type];
-  renderTypes();
-  $('#logo').textContent = T.icon; $('#title').textContent = T.title; $('#sub').textContent = T.sub;
-  document.title = T.title + ' · Rekenpuzzel';
-  $('#levels').innerHTML = T.levels.map((l, i) => `<button class="${i === LV() ? 'on' : ''}" data-l="${i}">${l}</button>`).join('');
+  $('#logo').textContent = '🧮'; $('#title').textContent = 'Rekenpuzzel';
+  $('#sub').textContent = 'Alles wat je al kan, door elkaar';
+  document.title = "Rekenpuzzel · Hippo's Oefeningen";
+  $('#nivTxt').textContent = ON.map(k => `${TYPES[k].icon} ${TYPES[k].title} (${TYPES[k].levels[LVof(k)]})`).join(' · ');
   $$('.seg[data-key]').forEach(seg => {
     const k = seg.dataset.key;
     seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(S[k]) === b.dataset.val));
   });
-  $('#stepsRow').hidden = !T.steps; $('#stepsLbl').textContent = T.steps || '';
-  $('#steps').checked = STEPS();
-  $('#brugRow').hidden = S.type === 'brug'; $('#brugMix').checked = S.brugMix;
   $('#sfx').checked = S.sfx; $('#videoSound').checked = S.videoSound;
   $('#hello').textContent = `${S.memes ? GREET : 'Hoi'} ${NAME()}! Klaar om te puzzelen?`;
 }
@@ -356,9 +332,7 @@ $$('.seg[data-key]').forEach(seg => seg.addEventListener('click', e => {
   S[k] = k === 'pieces' ? +b.dataset.val : b.dataset.val;
   saveS(); syncUI();
 }));
-$('#steps').addEventListener('change', e => { S.stepsBy[S.type] = e.target.checked; saveS(); });
-['brugMix', 'sfx', 'videoSound'].forEach(id => $('#' + id).addEventListener('change', e => { S[id] = e.target.checked; saveS(); syncUI(); }));
-window.addEventListener('hashchange', () => { const h = location.hash.replace('#', ''); if (TYPES[h] && h !== S.type) { S.type = h; saveS(); syncUI(); } });
+['sfx', 'videoSound'].forEach(id => $('#' + id).addEventListener('change', e => { S[id] = e.target.checked; saveS(); syncUI(); }));
 
 /* ---------------- Videos (kept on this device in IndexedDB) ---------------- */
 const VDB = {
@@ -761,17 +735,16 @@ function genDelen(level, steps) {
 }
 
 const GEN = {
-  brug: () => genBrug(LV(), STEPS()), dubbel: () => genDubbel(LV()), plaats: () => genPlaats(LV()),
-  maal: () => genMaal(LV(), STEPS()), kommaplus: () => genKommaPlus(LV()),
-  kommamaal: () => genKommaMaal(LV(), STEPS()), delen: () => genDelen(LV(), STEPS())
+  brug: k => genBrug(LVof(k), STEPSof(k)), dubbel: k => genDubbel(LVof(k)), plaats: k => genPlaats(LVof(k)),
+  maal: k => genMaal(LVof(k), STEPSof(k)), kommaplus: k => genKommaPlus(LVof(k)),
+  kommamaal: k => genKommaMaal(LVof(k), STEPSof(k)), delen: k => genDelen(LVof(k), STEPSof(k))
 };
+let lastType = '';
 function makeQuestion() {
-  // Extra nadruk op brugsommen: in de andere spelletjes is ongeveer 1 op 4 een brug-opwarmer
-  if (S.type !== 'brug' && S.brugMix && Math.random() < .25) {
-    const lvl = S.type.startsWith('komma') && Math.random() < .5 ? 2 : 1;
-    return Object.assign(genBrug(lvl, false), { warm: true });
-  }
-  return GEN[S.type]();
+  // Een soort kiezen uit wat aangevinkt is, liefst niet twee keer na elkaar dezelfde
+  const opts = ON.length > 1 ? ON.filter(k => k !== lastType) : ON;
+  const k = pick(opts); lastType = k;
+  return Object.assign(GEN[k](k), { soort: k });
 }
 const fmtAns = r => r.kind === 'cmp' ? r.ans : (r.dec === 2 ? nl(r.ans, 2) : nl(r.ans));
 
@@ -810,7 +783,7 @@ function show(id) { $$('.screen').forEach(s => s.classList.toggle('active', s.id
 function startRound() {
   const n = S.pieces;
   G = { n, open: new Set(), streak: 0, asked: 0, ok: 0, bad: 0, fast: 0, times: [], wrongs: [], pending: [], recent: [],
-        cur: null, rowI: 0, input: '', lock: false, t0: 0, startT: Date.now(), done: false, type: S.type, level: LV() };
+        cur: null, rowI: 0, input: '', lock: false, t0: 0, startT: Date.now(), done: false, type: 'mix', types: ON.map(k => k + ':' + LVof(k)) };
   G.pieces = buildPuzzle(n);
   $('#fbtext').textContent = `Bravo ${NAME()}!`;
   const v = pickVideo();
@@ -1026,7 +999,7 @@ function finish() {
   const avg = G.times.length ? G.times.reduce((a, b) => a + b, 0) / G.times.length : 0;
   const wrongs = [...new Set(G.wrongs)];
   const hist = store.get('np.history', []);
-  hist.unshift({ d: Date.now(), n: G.n, asked: G.asked, ok: G.ok, bad: G.bad, avg, secs, name: S.name || '', type: G.type, level: G.level, wrongs });
+  hist.unshift({ d: Date.now(), n: G.n, asked: G.asked, ok: G.ok, bad: G.bad, avg, secs, name: S.name || '', type: G.type, types: G.types, wrongs });
   store.set('np.history', hist.slice(0, 200));
 
   sfx('win'); confetti();
