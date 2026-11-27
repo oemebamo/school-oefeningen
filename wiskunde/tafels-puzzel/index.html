@@ -248,6 +248,7 @@ td.w{color:var(--muted);font-size:13px}
 
 <script src="../../niveau.js"></script>
 <script src="../../geluiden/geluiden.js"></script>
+<script src="../../geluid.js"></script>
 <script src="../hoofdrekenen-20-puzzel/videos/videos.js"></script>
 <script src="../afbeeldingen/afbeeldingen.js"></script>
 <script>
@@ -477,8 +478,7 @@ const fmt = e => `${e.a} ${sym(e.op)} ${e.b} = ${e.c}`;
 let actx = null;
 function tone(freqs, dur, type, vol) {
   try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-    if (actx.state === 'suspended') actx.resume();
+    actx = GELUID.ctx(); if (!actx) return;            // gedeeld en ontgrendeld, ook op iPad
     const t = actx.currentTime;
     freqs.forEach((fq, i) => {
       const o = actx.createOscillator(), g = actx.createGain();
@@ -609,13 +609,12 @@ const SOUND_FILES = {};
 function playRecording(text) {
   const f = SOUND_FILES[SOUNDS[text]];
   if (!f) return false;
-  try { const a = new Audio('../../geluiden/' + encodeURIComponent(f)); a.play().catch(() => {}); return true; } catch (e) { return false; }
+  return GELUID.play(f);
 }
 function say(text, lang, opt) {
   if (S.sfx && playRecording(text)) return;
   if (!S.sfx) return;
-  try { const u = new SpeechSynthesisUtterance(text); u.lang = lang || 'en-US'; u.rate = (opt && opt.rate) || 1.05; u.pitch = (opt && opt.pitch) || 1.2;
-        speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (err) {}
+  GELUID.speak(text, lang, opt && opt.rate, opt && opt.pitch);
 }
 // Memes spaarzaam: na een meme minstens 4 sommen pauze. Alleen 6-7 mag altijd (is zeldzaam genoeg).
 const MEME_PAUSE = 4;

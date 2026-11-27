@@ -132,6 +132,7 @@ button{font-family:inherit;cursor:pointer}
 </section>
 <script src="../../niveau.js"></script>
 <script src="../../geluiden/geluiden.js"></script>
+<script src="../../geluid.js"></script>
 <script>
 const GAME = {
   key: 'dh',
@@ -324,8 +325,7 @@ let actx = null;
 function tone(freqs, dur, type, vol, gap) {
   if (!S.sfx) return;
   try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-    if (actx.state === 'suspended') actx.resume();
+    actx = GELUID.ctx(); if (!actx) return;            // gedeeld en ontgrendeld, ook op iPad
     const t = actx.currentTime;
     freqs.forEach((fq, i) => {
       const o = actx.createOscillator(), g = actx.createGain(), st = t + i * (gap || dur);
@@ -349,8 +349,8 @@ const SOUND_FILES = {};
 function say(text, lang) {
   if (!S.sfx || !MEMES) return;
   const f = SOUND_FILES[text.toLowerCase().replace(/[!?.]/g, '').trim().replace(/\s+/g, '-')];
-  if (f) { try { new Audio('../../geluiden/' + encodeURIComponent(f)).play().catch(() => {}); } catch (e) {} return; }
-  try { const u = new SpeechSynthesisUtterance(text); u.lang = lang || 'en-US'; u.rate = 1.05; u.pitch = 1.2; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) {}
+  if (f) { GELUID.play(f); return; }
+  GELUID.speak(text, lang);
 }
 let toastT = null;
 function toast(msg, kind) {
