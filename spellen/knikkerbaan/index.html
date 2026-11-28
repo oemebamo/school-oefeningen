@@ -391,8 +391,8 @@ function toast(msg, kind) {
 }
 const PRAISE = ['Goed zo!', 'Juist!', 'Top!', 'Knap!', 'Super!', 'Yes!'];
 function endWord(perfect) {
-  const w = perfect ? pick([['Heftig', '🔥'], ['Glamour', '✨'], ['Megaleuk', '🤩']]) : ['Slay', '💅'];
-  if (MEMES) setTimeout(() => say(w[0] + '!', perfect ? 'nl-BE' : 'en-US'), 500);
+  const w = perfect ? pick([['Heftig', '🔥'], ['Glamour', '✨'], ['Megaleuk', '🤩'], ['Peak', '🏔️']]) : ['Slay', '💅'];
+  if (MEMES) setTimeout(() => say(w[0] + '!', perfect && w[0] !== 'Peak' ? 'nl-BE' : 'en-US'), 500);
   return MEMES ? `${w[0]} ${NAME}! ${w[1]}` : `Bravo ${NAME}!`;
 }
 
@@ -588,7 +588,7 @@ async function runMarble() {
       const tx = t.s > 0 ? 1530 - (n % 3) * 54 : 70 + (n % 3) * 54;
       await fly(m, t.s, tx, GROUND - R - Math.floor(n / 3) * 2);
       sfx('plof'); m.g.classList.add('lost');
-      if (MEMES && !G.saidFall && Math.random() < .5) { G.saidFall = true; say(pick(['Oh my days', 'Bruh', 'Cooked']), 'en-US'); }
+      if (MEMES && !G.saidFall && Math.random() < .5) { G.saidFall = true; say(pick(['Oh my days', 'Bruh', 'Cooked', 'Faah']), 'en-US'); }
       return false;
     }
     idle('🔵 De wissel staat goed!');

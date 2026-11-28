@@ -384,8 +384,8 @@ function toast(msg, kind) {
 }
 const PRAISE = ['Goed zo!', 'Juist!', 'Top!', 'Knap!', 'Super!', 'Yes!'];
 function endWord(perfect) {
-  const w = perfect ? pick([['Heftig', '🔥'], ['Glamour', '✨'], ['Megaleuk', '🤩']]) : ['Slay', '💅'];
-  if (MEMES) setTimeout(() => say(w[0] + '!', perfect ? 'nl-BE' : 'en-US'), 500);
+  const w = perfect ? pick([['Heftig', '🔥'], ['Glamour', '✨'], ['Megaleuk', '🤩'], ['Peak', '🏔️']]) : ['Slay', '💅'];
+  if (MEMES) setTimeout(() => say(w[0] + '!', perfect && w[0] !== 'Peak' ? 'nl-BE' : 'en-US'), 500);
   return MEMES ? `${w[0]} ${NAME}! ${w[1]}` : `Bravo ${NAME}!`;
 }
 
@@ -525,7 +525,7 @@ async function startRound() {
     if (run !== RUN) return;
     if (res.ok) {
       G.ok++; G.streak++; sfx('ok'); toast(res.dt < 4 ? '⚡ Supersnel!' : pick(PRAISE), 'ok'); updTop();
-      if (MEMES && G.streak === 5) say('Cool!', 'nl-BE');
+      if (MEMES && G.streak === 5) say(pick(['Cool!', 'Tuff', 'Huss huss huss']), 'nl-BE');
       await wait(250); idle(`${HERO} Op weg…`);
       G.seg++; await walkTo(G.bounds[G.seg]); updTop();
     } else {
