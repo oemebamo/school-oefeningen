@@ -45,7 +45,7 @@ button{font-family:inherit;cursor:pointer}
 @media (orientation:landscape) and (min-width:700px){
   #game.active{grid-template-columns:minmax(0,1fr) clamp(230px,27vw,330px);grid-template-rows:auto auto minmax(0,1fr);grid-template-areas:"top top" "q q" "board pad"}}
 .top{grid-area:top;display:flex;align-items:center;gap:12px}
-.chip{border:0;background:#fff;border-radius:14px;width:46px;height:46px;font-size:20px;font-weight:900;box-shadow:0 3px 10px rgba(60,40,160,.12);color:var(--ink)}
+.chip{border:0;background:#fff;border-radius:14px;min-width:46px;padding:0 10px;height:46px;font-size:20px;font-weight:900;box-shadow:0 3px 10px rgba(60,40,160,.12);color:var(--ink)}
 .prog{flex:1;display:flex;align-items:center;gap:12px;font-weight:900;font-size:20px;justify-content:flex-end}
 .prog .bar{flex:1;height:14px;border-radius:9px;background:#dfe6fa;overflow:hidden}
 .prog .bar div{height:100%;width:0;background:linear-gradient(90deg,var(--accent2),#8a4dff);border-radius:9px;transition:width .4s}
@@ -98,6 +98,8 @@ button{font-family:inherit;cursor:pointer}
 @media (orientation:landscape) and (min-width:700px){.cpad.cmp{grid-template-columns:1fr}}
 .qrow.small{font-size:.5em;color:var(--muted)}
 .qrow.small .ans{min-width:4.5em}
+
+.chip.arm{background:#e0565b;color:#fff;font-size:16px}
 
 #veil{fill:#f3f1ff;transition:opacity .8s}
 .ground{fill:#8a6a4e}
@@ -178,6 +180,7 @@ const GROEP = store.get('oef.groep', null) === 'wolf' ? 'wolf' : 'pimpelmees';
 const BASE = store.get(GROEP === 'wolf' ? 'np.settings' : 'sp.settings', {});
 const NAME = BASE.name || GROEP;
 const MEMES = BASE.memes === true;
+const GREET = pick(['Ewa drerrie', 'Yo bro', 'Hey gast']); // begroeting bij memes, zoals in de puzzels
 const HERO = GROEP === 'wolf' ? '🐺' : '🐦';
 const NV = NIVEAU.load(GROEP);        // wat het kind al kan: van de pagina "Wat kan ik al?"
 const tafelTxt = () => NV.tafels.length === 10 ? 'alle tafels' : 'tafel ' + NV.tafels.join(', ');
@@ -204,7 +207,7 @@ function renderStart() {
   $('#soorten').innerHTML = segHTML('soort', Object.entries(SOORTEN).map(([k, t]) => [k, `${t[0]} ${t[1]}`, t[2]]));
   GAME.rows.forEach(r => { $('#row-' + r.key).innerHTML = segHTML(r.key, r.opts); });
   $('#sfx').checked = S.sfx;
-  $('#hello').textContent = `Hoi ${NAME}! ${GAME.hello}`;
+  $('#hello').textContent = `${MEMES ? GREET : 'Hoi'} ${NAME}! ${GAME.hello}`;
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('.seg button'); if (!b) return;
@@ -378,11 +381,11 @@ function sfx(k) {
 // Eigen opnames (geluiden/) alleen als de irritante memes aan staan
 const SOUND_FILES = {};
 (Array.isArray(window.GELUIDEN) ? window.GELUIDEN : []).forEach(f => { SOUND_FILES[f.replace(/\.[^.]+$/, '').toLowerCase().trim().replace(/[\s_]+/g, '-')] = f; });
-function say(text, lang) {
+function say(text, lang, rate, pitch) {
   if (!S.sfx || !MEMES) return;
-  const f = SOUND_FILES[text.toLowerCase().replace(/[!?.]/g, '').trim().replace(/\s+/g, '-')];
+  const f = text === 'Maaah, stobbeuh!' ? SOUND_FILES['ma-stobbe'] : SOUND_FILES[text.toLowerCase().replace(/[!?.]/g, '').trim().replace(/\s+/g, '-')];
   if (f) { GELUID.play(f); return; }
-  GELUID.speak(text, lang);
+  GELUID.speak(text, lang, rate, pitch);
 }
 let toastT = null;
 function toast(msg, kind) {
@@ -430,7 +433,16 @@ $('#endp').addEventListener('click', e => {
 });
 let RUN = 0;   // verhoogt bij elke nieuwe ronde of stop, zodat oude animaties stoppen
 function stopGame() { RUN++; Q = null; $('#endp').hidden = true; renderStart(); show('start'); }
-$('#stop').addEventListener('click', stopGame);
+// Stoppen vraagt eerst bevestiging (zoals in de puzzels): met memes 'Ma stobbe?', anders 'Stoppen?'
+let stopArm = 0, stopT = 0;
+function resetStop() { const b = $('#stop'); clearTimeout(stopT); stopArm = 0; b.textContent = '✕'; b.classList.remove('arm'); }
+$('#stop').addEventListener('click', () => {
+  const b = $('#stop');
+  if (Date.now() - stopArm < 3000) { resetStop(); stopGame(); return; }
+  stopArm = Date.now(); b.textContent = MEMES ? 'Ma stobbe?' : 'Stoppen?'; b.classList.add('arm');
+  if (MEMES) say('Maaah, stobbeuh!', 'nl-BE', .8, 1.5); // zagerig uitgesproken
+  stopT = setTimeout(resetStop, 3000);
+});
 $('#go').addEventListener('click', () => startRound());
 renderStart();
 

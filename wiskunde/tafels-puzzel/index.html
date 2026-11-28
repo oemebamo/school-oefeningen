@@ -748,9 +748,9 @@ function finish() {
     ? pick([['Heftig', '🤯', 'heftig!'], ['Glamour', '✨💖', 'glamour!'], ['Megaleuk', '🤩', 'megaleuk!'], ['Peak', '🏔️', 'peak!']]) : ['Slay', '💅✨', 'slay!'];
   $('#q').innerHTML = `<span class="win">${win[0]} ${esc(NAME())}! ${win[1]}</span>`;
   if (win[2]) setTimeout(() => {
-    // Slay + naam (als er een naam is ingevuld). Eigen opname van "Slay!"? Dan die, en de computerstem zegt de naam erachter.
+    // Slay + naam (als er een naam is ingevuld). Eigen opname van "Slay!"? Dan die, plus een opname van de naam als die er is (bv. "Otis.m4a"), anders geen computerstem.
     if (win[0] === 'Slay' && S.name) {
-      if (S.sfx && playRecording('slay!')) setTimeout(() => say(S.name, 'nl-BE'), 800);
+      if (S.sfx && playRecording('slay!')) { const nf = SOUND_FILES[S.name.toLowerCase().trim().replace(/[\s_]+/g, '-')]; if (nf) setTimeout(() => GELUID.play(nf), 800); }
       else say('slay, ' + S.name + '!', 'en-US');
     } else say(win[2], ['Slay', 'Peak'].includes(win[0]) ? 'en-US' : 'nl-BE');
   }, 900);
