@@ -90,6 +90,15 @@ button{font-family:inherit;cursor:pointer}
 .hint a{color:var(--accent);cursor:pointer;text-decoration:underline}
 .row[hidden]{display:none}
 
+.qpic .klok{display:block;height:clamp(100px,20vh,190px);width:auto;margin:0 auto}
+.qrow .sym{color:var(--muted)}
+.qtip{font-size:clamp(14px,2.2vmin,20px);font-weight:800;background:#fff6d8;border-radius:12px;padding:6px 12px;margin:6px auto 0;max-width:min(92vw,760px);line-height:1.3}
+.cpad.cmp{grid-template-columns:repeat(3,1fr)}
+.cpad.cmp button{font-size:clamp(36px,6vmin,60px)}
+@media (orientation:landscape) and (min-width:700px){.cpad.cmp{grid-template-columns:1fr}}
+.qrow.small{font-size:.5em;color:var(--muted)}
+.qrow.small .ans{min-width:4.5em}
+
 #veil{fill:#f3f1ff;transition:opacity .8s}
 .ground{fill:#8a6a4e}
 .ramp{stroke:#b9783f;stroke-width:16;stroke-linecap:round}
@@ -136,6 +145,7 @@ button{font-family:inherit;cursor:pointer}
   <div class="endp" id="endp" hidden></div>
 </section>
 <script src="../../niveau.js"></script>
+<script src="../../pimpel.js"></script>
 <script src="../../geluiden/geluiden.js"></script>
 <script src="../../geluid.js"></script>
 <script>
@@ -177,8 +187,8 @@ const SOORTEN = GROEP === 'wolf' ? {
   tafels:  ['✖️', 'Tafels', tafelTxt() + (NV.delen ? ', ook gedeeld door' : '')],
   frans:   ['🇫🇷', 'Frans', NV.frans.verbs.length + ' werkwoorden']
 } : {
-  sommen: ['➕', 'Sommen', `${NIVEAU.OPS[NV.sommen.ops]}, ${NIVEAU.SOMMEN_LEVELS[NV.sommen.level]}`],
-  tafels: ['✖️', 'Tafels', tafelTxt()]
+  sommen: ['🧮', 'Rekenen', PIMPEL.on(NV).map(k => PIMPEL.ICONS[k]).join(' ') + ' door elkaar'],
+  tafels: ['✖️', 'Tafels', tafelTxt() + (NV.delen ? ', ook gedeeld door' : '')]
 };
 
 const S = Object.assign({ soort: Object.keys(SOORTEN)[0], sfx: true }, GAME.defaults, store.get(GAME.key + '.settings', {}));
@@ -215,8 +225,15 @@ function makeQ() {
 }
 const crosses = (a, op, b) => op === '+' ? Math.floor(a / 10) !== Math.floor((a + b) / 10) && (a + b) % 10 !== 0
                                          : Math.floor(a / 10) !== Math.floor((a - b) / 10) && a % 10 !== 0;
+// Pimpelmezen: oefeningen uit pimpel.js (zonder tussenstappen: de knikker rolt door)
+function fromPimpel(p) {
+  const r = p.rows[0];
+  return { kind: r.kind === 'num' ? 'num' : 'choice', parts: r.parts, ans: String(r.ans), label: p.label, pic: p.pic, tip: p.tip,
+           options: r.kind === 'cmp' ? ['<', '=', '>'] : r.options, cmp: r.kind === 'cmp', clock: r.kind === 'choice' };
+}
 function makeQ1() {
   const s = S.soort;
+  if (GROEP === 'pimpelmees') return fromPimpel(s === 'tafels' ? PIMPEL.tafel(NV) : PIMPEL.reken(NV, { noSteps: true }));
   if (s === 'sommen') {
     const { level, ops, missing } = NV.sommen, max = level === 'tot10' ? 10 : 20;
     let a, b, op;
@@ -275,13 +292,17 @@ function ask(q) {
 function renderQ() {
   const q = Q.q, box = '<span id="ans" class="ans"></span>';
   $('#q').classList.remove('wait');
-  $('#q').innerHTML = q.kind === 'choice'
+  const SY = ['+', '−', '×', ':', '=', '<', '>', '→'];
+  $('#q').innerHTML = q.clock ? `<div class="qpic">${q.pic}</div><div class="qrow small"><span>Hoe laat is het?</span>${box}</div>`
+    : q.parts ? `<div class="qrow">${q.parts.map(p => p && p.box ? box : `<span class="${SY.includes(p) ? 'sym' : ''}">${esc(p)}</span>`).join('')}</div>`
+    : q.kind === 'choice'
     ? `<div class="qhead">${esc(q.head)}</div><div class="qrow"><span class="pron">${esc(q.text)}</span>${box}</div>`
     : q.gap ? `<div class="qrow">${q.text.split('?').map(esc).join(box)}</div>`
     : `<div class="qrow"><span>${esc(q.text)} =</span>${box}</div>`;
   const ch = q.kind === 'choice';
   $('#pad').hidden = ch; $('#cpad').hidden = !ch;
   $('#pad').classList.remove('off'); $('#cpad').classList.remove('off');
+  $('#cpad').className = 'cpad' + (q.cmp ? ' cmp' : '');
   if (ch) $('#cpad').innerHTML = q.options.map(o => `<button data-k="${esc(o)}">${esc(o)}</button>`).join('');
   updAns();
 }
@@ -308,7 +329,11 @@ function submit(timeout) {
   else {
     box.classList.add('bad');
     const qe = $('#q'); qe.classList.remove('shake'); void qe.offsetWidth; qe.classList.add('shake');
-    setTimeout(() => { box.classList.remove('bad'); box.classList.add('fix'); box.textContent = q.ans; }, 350);
+    setTimeout(() => {
+      box.classList.remove('bad'); box.classList.add('fix'); box.textContent = q.ans;
+      const t = q.tip && q.tip(q.kind === 'num' ? parseInt(Q.input, 10) : Q.input);
+      if (t) $('#q').insertAdjacentHTML('beforeend', `<div class="qtip">💡 ${esc(t)}</div>`);
+    }, 350);
   }
   res({ ok, dt, timeout: !!timeout, q });
 }
@@ -525,7 +550,7 @@ function updTop() {
 }
 function feedback(res) {
   if (res.ok) { G.ok++; sfx('ok'); toast(res.dt < 4 ? '⚡ Supersnel!' : pick(PRAISE), 'ok'); }
-  else { G.bad++; sfx('bad'); G.wrongs.push(res.q.text + (res.q.head ? ' (' + res.q.head + ')' : '') + ' → ' + res.q.ans); toast(res.timeout ? `⏰ Te laat! Het is ${res.q.ans}` : `Oeps! Het is ${res.q.ans}`, 'bad'); }
+  else { G.bad++; sfx('bad'); G.wrongs.push(res.q.label || (res.q.text + (res.q.head ? ' (' + res.q.head + ')' : '') + ' → ' + res.q.ans)); toast(res.timeout ? `⏰ Te laat! Het is ${res.q.ans}` : `Oeps! Het is ${res.q.ans}`, 'bad'); }
   updTop();
 }
 async function stageRamp(m, i) {
@@ -536,7 +561,7 @@ async function stageRamp(m, i) {
     if (G.run !== RUN) return false;
     const res = await ask(makeQ()); feedback(res);
     if (res.ok) { setSwitch(i, true); sfx('click'); await wait(350); await roll(m, [wp, end], NORMAL); return true; }
-    await wait(900); await roll(m, [wp, end], NORMAL); return false;
+    await wait(res.q.tip ? 2800 : 900); await roll(m, [wp, end], NORMAL); return false;
   }
   const L = lenOf([start, end]), ctl = { speed: L / TEMPO[S.tempo] };
   let res = null;

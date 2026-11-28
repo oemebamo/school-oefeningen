@@ -63,6 +63,7 @@
   };
   const SOMMEN_LEVELS = { tot10: 'tot 10', zonder: 'tot 20 zonder brug', met: 'tot 20 met brug', alles: 'alles tot 20' };
   const OPS = { plus: '+ plus', min: '− min', beide: '+ en −' };
+  const KLOK = { uur: 'hele uren', half: 'en halve uren', kwart: 'en kwartieren' };
 
   function groep() { return get('oef.groep', null) === 'wolf' ? 'wolf' : 'pimpelmees'; }
 
@@ -81,9 +82,13 @@
     }
     const sp = get('sp.settings', {}), tp = get('tp.settings', {});
     const tafels = Array.isArray(tp.tables) && tp.tables.length ? tp.tables.filter(n => n >= 1 && n <= 10) : [2, 5, 10];
+    // Nieuw (nov 2026, uit Otis' werkbladen) staat standaard aan, behalve de tussenstappen
     return {
-      sommen: { level: SOMMEN_LEVELS[sp.level] ? sp.level : 'alles', ops: OPS[sp.ops] ? sp.ops : 'beide', missing: !!sp.missing },
-      tafels, tafelMissing: !!tp.missing
+      sommen: { on: true, level: SOMMEN_LEVELS[sp.level] ? sp.level : 'alles', ops: OPS[sp.ops] ? sp.ops : 'beide', missing: !!sp.missing, steps: false },
+      honderd: { on: true, ops: 'beide' },
+      vergelijken: { on: true, max: 100 },
+      klok: { on: true, level: 'half' },
+      tafels, tafelMissing: !!tp.missing, delen: true, nul: true, sprongen: true
     };
   }
   function merge(d, v) {
@@ -97,6 +102,7 @@
     const n = merge(defaults(g), get('niv.' + g, null) || {});
     // nooit leeg: minstens één tafel, één rekensoort, één werkwoord
     if (!n.tafels || !n.tafels.length) n.tafels = g === 'wolf' ? [2] : [1];
+    if (g === 'pimpelmees' && !['sommen', 'honderd', 'vergelijken', 'klok'].some(k => n[k].on)) n.sommen.on = true;
     if (g === 'wolf') {
       if (!Object.values(n.reken).some(r => r.on)) n.reken.brug.on = true;
       n.frans.verbs = n.frans.verbs.filter(v => VERBS.some(x => x[0] === v));
@@ -107,5 +113,5 @@
   function save(g, n) { set('niv.' + g, n); }
 
   window.FR = { VERBS, KAARTJES, END, IRREG, conj, elide, SETS: FR_SETS };
-  window.NIVEAU = { groep, load, save, REKEN, SOMMEN_LEVELS, OPS };
+  window.NIVEAU = { groep, load, save, REKEN, SOMMEN_LEVELS, OPS, KLOK };
 })();

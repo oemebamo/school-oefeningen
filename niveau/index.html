@@ -85,11 +85,20 @@ h1{margin:0;font-size:clamp(28px,5vw,38px);line-height:1.1}
     document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.g === G));
     let h = '';
     if (G === 'pimpelmees') {
-      h += `<div class="card"><h2>➕ Sommen</h2><p>Voor de Sommenpuzzel, de Knikkerbaan en het Doolhof.</p>
-        <div class="row"><b>Bewerkingen</b>${seg('sommen.ops', Object.entries(NIVEAU.OPS), N.sommen.ops)}</div>
-        <div class="row"><b>Tot waar</b>${seg('sommen.level', Object.entries(NIVEAU.SOMMEN_LEVELS), N.sommen.level)}</div>
-        ${tog('sommen.missing', N.sommen.missing, 'Ook met een ontbrekend getal', '(7 + ? = 12)')}</div>`;
-      h += tafels(N.tafels, tog('tafelMissing', N.tafelMissing, 'Ook met een ontbrekend getal', '(3 × ? = 21)'));
+      const soort = (key, icon, title, body) => { const on = N[key].on;
+        return `<div class="soort ${on ? '' : 'off'}"><label class="head"><input type="checkbox" data-tog="${key}.on" ${on ? 'checked' : ''}><span>${icon} ${title}</span></label><div class="body">${body}</div></div>`; };
+      h += `<div class="card"><h2>🧮 Rekenen</h2><p>Vink aan wat je al kan. De Sommenpuzzel mengt alles wat aangevinkt is; de Knikkerbaan en het Doolhof ook.</p>` +
+        soort('sommen', '➕', 'Sommen tot 20',
+          `<div class="row"><b>Bewerkingen</b>${seg('sommen.ops', Object.entries(NIVEAU.OPS), N.sommen.ops)}</div>
+           <div class="row"><b>Tot waar</b>${seg('sommen.level', Object.entries(NIVEAU.SOMMEN_LEVELS), N.sommen.level)}</div>
+           ${tog('sommen.missing', N.sommen.missing, 'Ook met een ontbrekend getal', '(7 + ? = 12)')}
+           ${tog('sommen.steps', N.sommen.steps, 'Tussenstappen bij brugsommen', '(13 − 6 = 13 − 3 − 3 = 10 − 3)')}`) +
+        soort('honderd', '💯', 'Sommen tot 100 zonder brug', seg('honderd.ops', Object.entries(NIVEAU.OPS), N.honderd.ops) + '<p class="ex" style="margin:6px 0 0">50 + 30, 80 + 5, 65 + 20, 89 − 50, 79 − 60</p>') +
+        soort('vergelijken', '🐊', 'Groter of kleiner (&lt; = &gt;)', seg('vergelijken.max', [[20, 'tot 20'], [100, 'tot 100']], N.vergelijken.max)) +
+        soort('klok', '🕒', 'De klok', seg('klok.level', Object.entries(NIVEAU.KLOK), N.klok.level)) + '</div>';
+      h += tafels(N.tafels, tog('tafelMissing', N.tafelMissing, 'Ook met een ontbrekend getal', '(3 × ? = 21)') +
+        tog('delen', N.delen, 'Ook gedeeld door', '(40 : 5 = 8)') + tog('nul', N.nul, 'Ook met 0', '(0 × 2, 0 : 5)') +
+        tog('sprongen', N.sprongen, 'Tellen met sprongen', '(15, 20, ?, 30)'));
     } else {
       h += `<div class="card"><h2>🧮 Rekenen</h2><p>Vink aan wat je al kan. De Rekenpuzzel mengt alles wat aangevinkt is.</p>` +
         Object.entries(NIVEAU.REKEN).map(([k, t]) => {

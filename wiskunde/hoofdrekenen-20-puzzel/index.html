@@ -172,6 +172,23 @@ td.w{color:var(--muted);font-size:13px}
 #fx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:50}
 .cf{position:absolute;top:0;animation:fall 2.8s cubic-bezier(.3,.1,.6,1) forwards}
 @keyframes fall{from{transform:translate(0,-12vh) rotate(0)}to{transform:translate(var(--dx),112vh) rotate(var(--r))}}
+.q{flex-direction:column;gap:.12em}
+.qrow{display:flex;align-items:center;justify-content:center;gap:.25em;flex-wrap:wrap}
+.qrow.done{font-size:.42em;opacity:.55}
+.qrow.small{font-size:.42em;color:var(--muted)}
+.qrow .okv{color:var(--ok)}
+.qrow .note{font-size:.36em;color:var(--muted);font-weight:700;align-self:center}
+.ans.wide{min-width:5em;font-size:.6em;height:1.6em}
+.qpic .klok{display:block;height:clamp(110px,23vh,210px);width:auto}
+.q.pic{gap:.06em}
+.qtip{font-size:clamp(15px,2.3vmin,21px);font-weight:800;color:var(--ink);background:#fff6d8;border-radius:12px;padding:6px 12px;max-width:min(92vw,760px);text-align:center;line-height:1.3}
+.cpad{grid-area:pad;display:grid;gap:12px;grid-template-columns:repeat(3,1fr)}
+.cpad.txt{grid-template-columns:1fr 1fr}
+.cpad button{border-radius:20px;background:#fff;font-size:clamp(40px,8vmin,72px);font-weight:900;min-height:72px;color:#6a4cff;box-shadow:0 5px 0 #d6cef2}
+.cpad.txt button{font-size:clamp(22px,3.6vmin,32px)}
+.cpad button:active{transform:translateY(4px);box-shadow:0 1px 0 #d6cef2}
+.cpad[hidden],.pad[hidden]{display:none}
+@media (orientation:landscape) and (min-width:700px){ .cpad,.cpad.txt{grid-template-columns:1fr;max-height:440px;align-self:center;height:100%} }
 </style>
 </head>
 <body>
@@ -233,12 +250,14 @@ td.w{color:var(--muted);font-size:13px}
     <button data-k="0" style="grid-area:k0">0</button>
     <button data-k="ok" class="ko" style="grid-area:ko">OK</button>
   </div>
+  <div class="cpad" id="cpad" hidden></div>
   <div class="endp" id="endp" hidden></div>
 </section>
 
 <div id="fx"></div>
 
 <script src="../../niveau.js"></script>
+<script src="../../pimpel.js"></script>
 <script src="../../geluiden/geluiden.js"></script>
 <script src="../../geluid.js"></script>
 <script src="videos/videos.js"></script>
@@ -273,7 +292,9 @@ function syncUI() {
     const k = seg.dataset.key;
     seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(S[k]) === b.dataset.val));
   });
-  $('#nivTxt').textContent = `${NIVEAU.OPS[S.ops]}, ${NIVEAU.SOMMEN_LEVELS[S.level]}${S.missing ? ', ook met ontbrekend getal' : ''}.`;
+  const T = { sommen: () => `➕ ${NIVEAU.OPS[NV.sommen.ops]}, ${NIVEAU.SOMMEN_LEVELS[NV.sommen.level]}${NV.sommen.steps ? ', met tussenstappen' : ''}`,
+    honderd: () => `💯 tot 100 zonder brug`, vergelijken: () => `🐊 groter of kleiner tot ${NV.vergelijken.max}`, klok: () => `🕒 klok: ${NIVEAU.KLOK[NV.klok.level]}` };
+  $('#nivTxt').textContent = PIMPEL.on(NV).map(k => T[k]()).join(' · ');
   $('#sfx').checked = S.sfx; $('#videoSound').checked = S.videoSound;
   $('#hello').textContent = `${S.memes ? GREET : 'Hoi'} ${NAME()}! Klaar om te puzzelen?`;
 }
@@ -453,27 +474,16 @@ function buildPuzzle(n) {
   return pieces;
 }
 
-/* ---------------- Exercises ---------------- */
-function crossing(op, a, b) { // "brug over het tiental"
-  return op === '+' ? (a % 10) + (b % 10) > 10 : (a % 10 !== 0 && (a % 10) < (b % 10));
+/* ---------------- Oefeningen (pimpel.js, niveau van "Wat kan ik al?") ---------------- */
+const BOX = PIMPEL.BOX;
+const MAKE = () => PIMPEL.reken(NV);
+const fmtAns = r => String(r.ans);
+const SYMS = ['+', '−', '×', ':', '=', '<', '>', '→', '…'];
+function partHTML(p) {
+  if (typeof p === 'number') return `<span class="num">${p}</span>`;
+  if (SYMS.includes(p)) return `<span class="sym">${p}</span>`;
+  return `<span class="num">${esc(p)}</span>`;
 }
-function buildPool() {
-  const max = S.level === 'tot10' ? 10 : 20;
-  const ops = S.ops === 'plus' ? ['+'] : S.ops === 'min' ? ['-'] : ['+', '-'];
-  const pool = [];
-  for (const op of ops) for (let a = 1; a <= max; a++) for (let b = 1; b <= max; b++) {
-    const c = op === '+' ? a + b : a - b;
-    if (c > max || c < 1) continue;
-    const x = crossing(op, a, b);
-    if (S.level === 'zonder' && x) continue;
-    if (S.level === 'met' && !x) continue;
-    pool.push({ op, a, b, c });
-  }
-  return pool;
-}
-const key = e => e.a + e.op + e.b;
-const sym = op => op === '+' ? '+' : '−';
-const fmt = e => `${e.a} ${sym(e.op)} ${e.b} = ${e.c}`;
 
 /* ---------------- Sound effects ---------------- */
 let actx = null;
@@ -510,7 +520,7 @@ function show(id) { $$('.screen').forEach(s => s.classList.toggle('active', s.id
 function startRound() {
   const n = S.pieces;
   G = { n, open: new Set(), streak: 0, asked: 0, ok: 0, bad: 0, fast: 0, times: [], wrongs: [], pending: [], recent: [],
-        cur: null, input: '', lock: false, t0: 0, startT: Date.now(), done: false, pool: buildPool() };
+        cur: null, input: '', lock: false, t0: 0, startT: Date.now(), done: false, rowI: 0 };
   G.pieces = buildPuzzle(n);
   $('#fbtext').textContent = `Bravo ${NAME()}!`;
   const v = pickVideo();
@@ -529,7 +539,7 @@ function startRound() {
     vid.pause(); vid.removeAttribute('src'); vid.load(); vid.hidden = true;
   }
   updateSnd();
-  $('#pad').hidden = false; $('#endp').hidden = true;
+  $('#endp').hidden = true;
   show('game'); updateTop(); nextQ();
 }
 function playVid() {
@@ -540,60 +550,89 @@ $('#pic').addEventListener('error', () => { $('#pic').hidden = true; $('#fallbac
 vid.addEventListener('error', () => { if (vid.getAttribute('src')) { vid.hidden = true; $('#fallback').hidden = false; updateSnd(); toast('Video kan niet spelen', 'bad'); } });
 
 function nextQ() {
-  let ex;
+  let q;
   const i = G.pending.findIndex(p => p.due <= G.asked);
-  if (i >= 0) ex = G.pending.splice(i, 1)[0].ex; else ex = gen();
-  G.cur = ex; G.input = ''; G.asked++; G.lock = false; G.t0 = performance.now();
+  if (i >= 0) q = G.pending.splice(i, 1)[0].q;
+  else {
+    for (let t = 0; t < 30; t++) { q = MAKE(); if (!G.recent.includes(q.key)) break; }
+    G.recent.push(q.key); if (G.recent.length > 10) G.recent.shift();
+  }
+  G.cur = q; G.rowI = 0; G.input = ''; G.asked++; G.lock = false; G.t0 = performance.now();
   renderQ();
 }
-function gen() {
-  const pool = G.pool;
-  let base = pool[0];
-  for (let t = 0; t < 30; t++) { base = pick(pool); if (!G.recent.includes(key(base))) break; }
-  G.recent.push(key(base));
-  if (G.recent.length > Math.min(8, Math.floor(pool.length / 2))) G.recent.shift();
-  let hide = 'c';
-  if (S.missing && Math.random() < .35) hide = Math.random() < .5 ? 'b' : 'a';
-  return Object.assign({}, base, { hide });
-}
-function renderQ() {
-  const e = G.cur;
-  const parts = [['a', e.a], ['s', sym(e.op)], ['b', e.b], ['s', '='], ['c', e.c]];
-  $('#q').innerHTML = parts.map(([k, v]) => k === e.hide
-    ? '<span id="ans" class="ans"></span>'
-    : `<span class="${k === 's' ? 'sym' : 'num'}">${v}</span>`).join('');
+function renderQ(tip) {
+  const q = G.cur, html = [], cr = q.rows[G.rowI];
+  if (q.pic) html.push(`<div class="qpic">${q.pic}</div>`);
+  q.rows.forEach((r, i) => {
+    if (i > G.rowI || i < G.rowI - 2) return;               // toon de huidige stap en hooguit 2 vorige
+    const done = i < G.rowI;
+    if (r.kind === 'choice') { html.push(`<div class="qrow small">${esc(r.parts[0])}</div><div class="qrow"><span id="ans" class="ans wide"></span></div>`); return; }
+    const inner = r.parts.map(p => p && p.box
+      ? (done ? `<span class="num okv">${fmtAns(r)}</span>` : '<span id="ans" class="ans"></span>')
+      : partHTML(p)).join('');
+    html.push(`<div class="qrow${done ? ' done' : ''}">${inner}${r.note && !done ? `<span class="note">${esc(r.note)}</span>` : ''}</div>`);
+  });
+  if (tip) html.push(`<div class="qtip">💡 ${esc(tip)}</div>`);
+  $('#q').innerHTML = html.join('');
+  $('#q').classList.toggle('pic', !!q.pic);
+  const btns = cr.kind === 'cmp' ? ['<', '=', '>'] : cr.kind === 'choice' ? cr.options : null;
+  $('#pad').hidden = !!btns; $('#cpad').hidden = !btns;
+  if (btns) {
+    $('#cpad').className = 'cpad' + (cr.kind === 'choice' ? ' txt' : '');
+    $('#cpad').innerHTML = btns.map(b => `<button data-k="${esc(b)}">${esc(b)}</button>`).join('');
+  }
   updAns();
 }
-function updAns() { const a = $('#ans'); if (a) a.innerHTML = G.input ? G.input : '<i class="caret"></i>'; }
+function updAns() { const a = $('#ans'); if (a) a.innerHTML = G.input ? esc(G.input) : '<i class="caret"></i>'; }
 
 function press(k) {
   if (!G || G.lock || G.done) return;
+  const r = G.cur.rows[G.rowI];
+  if (r.kind === 'cmp' || r.kind === 'choice') {
+    const opts = r.kind === 'cmp' ? ['<', '=', '>'] : r.options;
+    if (/^[1-4]$/.test(k) && r.kind === 'choice') k = opts[+k - 1];
+    if (opts.includes(k)) { G.input = k; updAns(); check(); }
+    return;
+  }
   if (k === 'del') G.input = G.input.slice(0, -1);
   else if (k === 'ok') { if (G.input !== '') check(); return; }
-  else { if (G.input === '0') G.input = ''; if (G.input.length >= 2) return; G.input += k; }
+  else if (/^[0-9]$/.test(k)) { if (G.input === '0') G.input = ''; if (G.input.length >= 3) return; G.input += k; }
+  else return;
   updAns();
 }
 function check() {
-  const e = G.cur, ans = e[e.hide], val = parseInt(G.input, 10);
-  const dt = (performance.now() - G.t0) / 1000;
-  const box = $('#ans');
+  const q = G.cur, r = q.rows[G.rowI], box = $('#ans');
+  const given = r.kind === 'num' ? parseInt(G.input, 10) : G.input;
+  const ok = given === r.ans;
   G.lock = true;
-  if (val === ans) {
+  if (ok && G.rowI < q.rows.length - 1) {                    // tussenstap juist: door naar de volgende stap
+    box.classList.add('ok'); if (S.sfx) tone([880], .08, 'sine', .1);
+    setTimeout(() => { G.rowI++; G.input = ''; G.lock = false; renderQ(); }, 380);
+    return;
+  }
+  const ans = fmtAns(r);
+  if (ok) {
+    const dt = (performance.now() - G.t0) / 1000;
     G.ok++; G.times.push(dt); G.streak++;
-    const fast = dt < 3.5; if (fast) G.fast++;
+    const fast = dt < 3.5 * q.rows.length + (q.pic ? 2 : 0); if (fast) G.fast++;
     box.classList.add('ok');
-    toast(memeFor(e, ans, fast) || (fast ? '⚡ Supersnel!' : pick(PRAISE)), 'ok'); sfx('ok'); G.prevBad = false;
+    toast(memeFor(q, r.ans, fast) || (fast ? '⚡ Supersnel!' : pick(PRAISE)), 'ok'); sfx('ok'); G.prevBad = false;
     openPiece(); updateTop();
     setTimeout(() => { if (G.open.size >= G.n) finish(); else nextQ(); }, 800);
   } else {
-    G.bad++; G.streak = 0; G.wrongs.push(fmt(e));
+    G.bad++; G.streak = 0; G.wrongs.push(q.label);
     const cringe = cringeFor(); G.prevBad = true;
+    const tip = q.tip ? q.tip(given) : null;
     box.classList.add('bad');
-    const q = $('#q'); q.classList.remove('shake'); void q.offsetWidth; q.classList.add('shake');
+    const qe = $('#q'); qe.classList.remove('shake'); void qe.offsetWidth; qe.classList.add('shake');
     sfx('bad'); closePiece(); updateTop();
-    setTimeout(() => { box.classList.remove('bad'); box.classList.add('fix'); box.textContent = ans; toast(cringe ? `${cringe} Het is ${ans}` : `Oeps! Het is ${ans}`, 'bad'); }, 500);
-    G.pending.push({ ex: Object.assign({}, e), due: G.asked + 2 }); // komt 2 sommen later terug
-    setTimeout(nextQ, 2300);
+    setTimeout(() => {
+      if (tip) { renderQ(tip); const b = $('#ans'); b.classList.add('fix'); b.textContent = ans; }
+      else { box.classList.remove('bad'); box.classList.add('fix'); box.textContent = ans; }
+      toast(cringe ? `${cringe} Het is ${ans}` : `Oeps! Het is ${ans}`, 'bad');
+    }, 500);
+    G.pending.push({ q, due: G.asked + 2 });                 // komt 2 oefeningen later terug
+    setTimeout(nextQ, tip ? 4300 : 2400);
   }
 }
 // Eigen opnames: bestanden in de map geluiden/ (lijst in geluiden/geluiden.js) gaan voor op de computerstem
@@ -624,7 +663,7 @@ function memeFor(e, ans, fast) {
   if (!S.memes) return null;
   // Laatste stukje van de puzzel: geen meme, want het eindwoord (Heftig, Slay, ...) komt meteen erna
   if (G.open.size + 1 >= G.n) return null;
-  const nums = [e.a, e.b, e.c];
+  const nums = e.nums || [];
   if (nums.includes(6) && nums.includes(7)) {            // 6 + 7, 13 − 7 = 6, ...
     const m = $('#meme'); m.classList.remove('show'); void m.offsetWidth; m.classList.add('show');
     setTimeout(() => say('six seven'), 250); memeUsed();
@@ -688,7 +727,7 @@ function finish() {
   const avg = G.times.length ? G.times.reduce((a, b) => a + b, 0) / G.times.length : 0;
   const wrongs = [...new Set(G.wrongs)];
   const hist = store.get('sp.history', []);
-  hist.unshift({ d: Date.now(), n: G.n, asked: G.asked, ok: G.ok, bad: G.bad, avg, secs, name: S.name || '', level: S.level, ops: S.ops, wrongs });
+  hist.unshift({ d: Date.now(), n: G.n, asked: G.asked, ok: G.ok, bad: G.bad, avg, secs, name: S.name || '', level: S.level, ops: S.ops, topics: PIMPEL.on(NV), wrongs });
   store.set('sp.history', hist.slice(0, 200));
 
   sfx('win'); confetti();
@@ -714,7 +753,7 @@ function finish() {
     </div>
     <div class="again">${wrongs.length ? '<b>Nog eens oefenen:</b><br>' + wrongs.map(w => `<em>${w}</em>`).join('') : '<b>Geen enkele fout! 🌟</b>'}</div>
     <div class="endbtns"><button class="go small" id="again">Nog een ronde ▶</button><button class="ghost" id="home">Instellingen</button></div>`;
-  $('#pad').hidden = true; $('#endp').hidden = false;
+  $('#pad').hidden = true; $('#cpad').hidden = true; $('#endp').hidden = false;
   $('#again').onclick = startRound;
   $('#home').onclick = goHome;
   if (!vid.hidden && vid.getAttribute('src')) { vid.currentTime = 0; vid.muted = false; playVid(); updateSnd(); }
@@ -738,10 +777,10 @@ function confetti() {
 
 /* ---------------- Controls ---------------- */
 $('#go').addEventListener('click', () => { tone([1], .01, 'sine', .0002); startRound(); }); // unlock audio on first tap
-$('#pad').addEventListener('click', e => { const b = e.target.closest('button'); if (b) press(b.dataset.k); });
+['#pad', '#cpad'].forEach(id => $(id).addEventListener('click', e => { const b = e.target.closest('button'); if (b) press(b.dataset.k); }));
 document.addEventListener('keydown', e => {
   if (!$('#game').classList.contains('active')) return;
-  if (/^[0-9]$/.test(e.key)) press(e.key);
+  if (/^[0-9<>=]$/.test(e.key)) press(e.key);
   else if (e.key === 'Backspace') { e.preventDefault(); press('del'); }
   else if (e.key === 'Enter') { e.preventDefault(); if (G && G.done) startRound(); else press('ok'); }
 });
