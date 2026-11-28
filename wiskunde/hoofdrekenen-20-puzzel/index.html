@@ -198,7 +198,7 @@ td.w{color:var(--muted);font-size:13px}
     <a class="homelink" href="../../index.html">← Alle spelletjes</a>
     <header class="hero">
       <div class="logo">🧩</div>
-      <div><h1>Sommenpuzzel</h1><p id="hello">Hoi pimpelmees! Klaar om te puzzelen?</p></div>
+      <div><h1 id="title">Sommenpuzzel</h1><p id="hello">Hoi pimpelmees! Klaar om te puzzelen?</p></div>
     </header>
     <button id="go" class="go">Start ▶</button>
 
@@ -274,6 +274,7 @@ const store = {
 };
 
 /* ---------------- Settings ---------------- */
+const KLOK = new URLSearchParams(location.search).has('klok');
 const DEFAULTS = { name: '', ops: 'beide', level: 'alles', pieces: 9, missing: false, sfx: true, videoSound: false, memes: false };
 const S = Object.assign({}, DEFAULTS, store.get('sp.settings', {}));
 // De naam stel je in op de homepage
@@ -294,9 +295,13 @@ function syncUI() {
   });
   const T = { sommen: () => `➕ ${NIVEAU.OPS[NV.sommen.ops]}, ${NIVEAU.SOMMEN_LEVELS[NV.sommen.level]}${NV.sommen.steps ? ', met tussenstappen' : ''}`,
     honderd: () => `💯 tot 100 zonder brug`, vergelijken: () => `🐊 groter of kleiner tot ${NV.vergelijken.max}`, klok: () => `🕒 klok: ${NIVEAU.KLOK[NV.klok.level]}` };
-  $('#nivTxt').textContent = PIMPEL.on(NV).map(k => T[k]()).join(' · ');
+  $('#nivTxt').textContent = KLOK ? T.klok() : PIMPEL.on(NV).map(k => T[k]()).join(' · ');
   $('#sfx').checked = S.sfx; $('#videoSound').checked = S.videoSound;
   $('#hello').textContent = `${S.memes ? GREET : 'Hoi'} ${NAME()}! Klaar om te puzzelen?`;
+}
+if (KLOK) {
+  $('#title').textContent = 'Klokpuzzel'; document.title = "Klokpuzzel · Hippo's Oefeningen";
+  const lg = document.querySelector('.hero .logo, .logo'); if (lg) lg.textContent = '🕒';
 }
 $$('.seg').forEach(seg => seg.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
@@ -476,7 +481,9 @@ function buildPuzzle(n) {
 
 /* ---------------- Oefeningen (pimpel.js, niveau van "Wat kan ik al?") ---------------- */
 const BOX = PIMPEL.BOX;
-const MAKE = () => PIMPEL.reken(NV);
+// Klokpuzzel: dezelfde pagina met ?klok, enkel klokvragen (niveau van de klok op "Wat kan ik al?")
+const MAKE = () => KLOK ? Object.assign(PIMPEL.klok(NV), { topic: 'klok' }) : PIMPEL.reken(NV);
+const HIST = KLOK ? 'kp.history' : 'sp.history';
 const fmtAns = r => String(r.ans);
 const SYMS = ['+', '−', '×', ':', '=', '<', '>', '→', '…'];
 function partHTML(p) {
@@ -726,9 +733,9 @@ function finish() {
   const secs = Math.round((Date.now() - G.startT) / 1000);
   const avg = G.times.length ? G.times.reduce((a, b) => a + b, 0) / G.times.length : 0;
   const wrongs = [...new Set(G.wrongs)];
-  const hist = store.get('sp.history', []);
+  const hist = store.get(HIST, []);
   hist.unshift({ d: Date.now(), n: G.n, asked: G.asked, ok: G.ok, bad: G.bad, avg, secs, name: S.name || '', level: S.level, ops: S.ops, topics: PIMPEL.on(NV), wrongs });
-  store.set('sp.history', hist.slice(0, 200));
+  store.set(HIST, hist.slice(0, 200));
 
   sfx('win'); confetti();
   // Zonder fouten: Heftig of Glamour, anders Slay

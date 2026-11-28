@@ -148,7 +148,8 @@ window.PIMPEL = (function () {
       if (m === 30 && given === `half ${h}`) return `Bij half kijk je naar het volgende uur: de kleine wijzer is voorbij de ${h}, dus ${ans}.`;
       if (m === 0) return `De grote wijzer staat op 12, de kleine wijzer op de ${h}: ${ans}.`;
       if (m === 30) return `De grote wijzer staat op 6: het is half. ${ans[0].toUpperCase() + ans.slice(1)}.`;
-      return `Het is ${ans}.`;
+      if (m === 15) return `De grote wijzer staat op 3: kwart over. De kleine wijzer is net voorbij de ${h}: ${ans}.`;
+      return `De grote wijzer staat op 9: kwart voor. Het is bijna ${NEXT(h)} uur: ${ans}.`;
     };
     return Q('k' + h + ':' + m, [row(['Hoe laat is het?', BOX], ans, { kind: 'choice', options: shuffle([...opts]), hideParts: true })],
       `🕒 ${String(h)}:${String(m).padStart(2, '0')} = ${ans}`, [h, m], { pic: klokSVG(h, m), tip });

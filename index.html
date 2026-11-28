@@ -150,6 +150,7 @@ td.who{font-weight:800}
     </a>
   </div>
   <div class="minis">
+    <a class="mini" href="wiskunde/hoofdrekenen-20-puzzel/index.html?klok"><span class="ico">🕒</span><b>Klokpuzzel</b><span class="s">Hoe laat is het? Hele en halve uren</span></a>
     <a class="mini" href="spellen/knikkerbaan/index.html"><span class="ico">🔵</span><b>Knikkerbaan</b><span class="s">Zet de wissels juist met sommen of tafels</span></a>
     <a class="mini" href="spellen/doolhof/index.html"><span class="ico">🧭</span><b>Doolhof</b><span class="s">Elke juiste som brengt je dichter bij de uitgang</span></a>
   </div>
@@ -288,16 +289,18 @@ td.who{font-weight:800}
     ? (NP[r.type] ? `${NP[r.type][1]} (${NP[r.type][3][r.level] || ''})` : '')
     : r.game === 'tafels'
     ? ((r.tables || []).length === 10 ? 'alle tafels' : 'tafel ' + (r.tables || []).join(', ')) + (r.delen ? ' (ook delen)' : '')
+    : r.game === 'klok' ? 'Klokpuzzel'
     : r.topics ? 'Sommenpuzzel: ' + r.topics.map(t => ({ sommen: '➕', honderd: '💯', vergelijken: '🐊', klok: '🕒' }[t] || '')).join(' ')
     : `${OPS[r.ops] || ''} ${LEVELS[r.level] || ''}`;
-  const icon = r => r.game === 'knikker' ? '🔵' : r.game === 'doolhof' ? '🧭' : r.game === 'frans' ? (FR[r.type] || ['🇫🇷'])[0] : r.game === 'reken' ? (NP[r.type] || ['🧮'])[0] : r.game === 'tafels' ? '🔢' : '🧩';
+  const icon = r => r.game === 'knikker' ? '🔵' : r.game === 'doolhof' ? '🧭' : r.game === 'frans' ? (FR[r.type] || ['🇫🇷'])[0] : r.game === 'reken' ? (NP[r.type] || ['🧮'])[0] : r.game === 'tafels' ? '🔢' : r.game === 'klok' ? '🕒' : '🧩';
   let filter = null, shown = 15;
   function allRounds() {   // enkel de spelletjes van de gekozen groep
     const rounds = groep === 'wolf'
       ? [...get('np.history', []).map(r => Object.assign({ game: 'reken' }, r)),
          ...get('fp.history', []).map(r => Object.assign({ game: 'frans' }, r))]
       : [...get('sp.history', []).map(r => Object.assign({ game: 'sommen' }, r)),
-         ...get('tp.history', []).map(r => Object.assign({ game: 'tafels' }, r))];
+         ...get('tp.history', []).map(r => Object.assign({ game: 'tafels' }, r)),
+         ...get('kp.history', []).map(r => Object.assign({ game: 'klok' }, r))];
     const g = groep === 'wolf' ? 'wolf' : 'pimpelmees';
     get('kb.history', []).forEach(r => { if (r.groep === g) rounds.push(Object.assign({ game: 'knikker' }, r)); });
     get('dh.history', []).forEach(r => { if (r.groep === g) rounds.push(Object.assign({ game: 'doolhof' }, r)); });
@@ -366,7 +369,7 @@ td.who{font-weight:800}
     }
     clearTimeout(armT);
     try {
-      Object.keys(localStorage).filter(k => /^(oef|sp|tp|np|fp|kb|dh|niv)\./.test(k)).forEach(k => localStorage.removeItem(k));
+      Object.keys(localStorage).filter(k => /^(oef|sp|tp|kp|np|fp|kb|dh|niv)\./.test(k)).forEach(k => localStorage.removeItem(k));
     } catch (e) {}
     location.reload();
   });
