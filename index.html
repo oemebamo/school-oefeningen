@@ -138,14 +138,14 @@ td.who{font-weight:800}
       <span class="go">▶</span>
       <span class="ico">🧩</span>
       <h2>Sommenpuzzel</h2>
-      <p>Plus en min tot 20</p>
+      <p>Sommen, groter of kleiner, de klok…</p>
       <span class="last" id="lastSums" hidden></span>
     </a>
     <a class="game tables" href="wiskunde/tafels-puzzel/index.html">
       <span class="go">▶</span>
       <span class="ico">🔢</span>
       <h2>Tafelpuzzel</h2>
-      <p>De tafels van 1 tot 10</p>
+      <p>Maal, gedeeld door en sprongen</p>
       <span class="last" id="lastTables" hidden></span>
     </a>
   </div>
@@ -287,7 +287,8 @@ td.who{font-weight:800}
     : r.game === 'reken'
     ? (NP[r.type] ? `${NP[r.type][1]} (${NP[r.type][3][r.level] || ''})` : '')
     : r.game === 'tafels'
-    ? ((r.tables || []).length === 10 ? 'alle tafels' : 'tafel ' + (r.tables || []).join(', '))
+    ? ((r.tables || []).length === 10 ? 'alle tafels' : 'tafel ' + (r.tables || []).join(', ')) + (r.delen ? ' (ook delen)' : '')
+    : r.topics ? 'Sommenpuzzel: ' + r.topics.map(t => ({ sommen: '➕', honderd: '💯', vergelijken: '🐊', klok: '🕒' }[t] || '')).join(' ')
     : `${OPS[r.ops] || ''} ${LEVELS[r.level] || ''}`;
   const icon = r => r.game === 'knikker' ? '🔵' : r.game === 'doolhof' ? '🧭' : r.game === 'frans' ? (FR[r.type] || ['🇫🇷'])[0] : r.game === 'reken' ? (NP[r.type] || ['🧮'])[0] : r.game === 'tafels' ? '🔢' : '🧩';
   let filter = null, shown = 15;
