@@ -1,12 +1,32 @@
 // Lijst van eigen opnames in deze map. Wordt opnieuw gemaakt door ../update-geluiden.sh
 window.GELUIDEN = [
+  "Aina.m4a",
+  "Aura.m4a",
+  "Bro.m4a",
+  "Bruh.m4a",
+  "Clock it.m4a",
+  "Cooked.m4a",
   "Cool.m4a",
+  "Cringe.m4a",
+  "Erg of mnu.m4a",
+  "Faah.m4a",
+  "Glamour.m4a",
+  "Good boy.m4a",
   "Heftig.m4a",
+  "Huss huss huss.m4a",
+  "Let him cook.m4a",
+  "Lowkey.m4a",
   "Ma stobbe.m4a",
   "Mega.m4a",
   "Megaleuk.m4a",
+  "Noncha.m4a",
   "Oh my days.m4a",
+  "Peak.m4a",
+  "Sigma.m4a",
   "Six seven.m4a",
   "Skibidi.m4a",
-  "Slay girl.m4a"
+  "Slay girl.m4a",
+  "Slay.m4a",
+  "Tuff.m4a",
+  "Wesh.m4a"
 ];
